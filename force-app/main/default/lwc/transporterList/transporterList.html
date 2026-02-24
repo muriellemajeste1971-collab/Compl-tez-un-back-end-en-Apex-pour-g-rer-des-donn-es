@@ -1,0 +1,13 @@
+<template>
+    <lightning-card title="Sélectionnez un transporteur">
+        <template if:true={tarifs}>
+            <ul>
+                <template for:each={tarifs} for:item="t">
+                    <li key={t.Id}>
+                        {t.Name} 
+                    </li>
+                </template>
+            </ul>
+        </template>
+    </lightning-card>
+</template>
