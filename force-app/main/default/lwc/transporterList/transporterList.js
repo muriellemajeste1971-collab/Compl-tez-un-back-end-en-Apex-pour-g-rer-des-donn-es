@@ -4,7 +4,17 @@ import getTransporters from '@salesforce/apex/TransporterOrchestrator.getAllTran
 
 export default class TransporterList extends LightningElement {
     @api recordId;
+    @api pays;
+    @api typeClient;
+
+
     tarifs = [];
+    get transporterLabel() {
+    const paysLabel = this.pays ?? '';
+    const typeClientLabel = this.typeClient ?? '';
+
+    return `Sélectionnez un Transporteur `;
+    }
 
     @wire(getTransporters, { orderId: '$recordId' }) 
     wiredTarifs({ data, error }) {
@@ -24,6 +34,8 @@ export default class TransporterList extends LightningElement {
             console.error(error);
         }
     }
+
+    
 
     handleSelection(event) {
         this.selectedTransporterId = event.target.value;
