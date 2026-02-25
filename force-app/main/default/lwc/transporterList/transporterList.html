@@ -26,15 +26,15 @@
 
                             <!-- Texte -->
                             <td>
-                                <template if:true={t.isFastest}>
-                                    <strong>Transporteur le plus rapide : </strong>
-                                </template>
+                                
 
                                 <template if:true={t.isCheapest}>
                                     <strong>Transporteur le moins cher : </strong>
                                 </template>
 
-                                
+                                <template if:true={t.isFastest}>
+                                    <strong>Transporteur le plus rapide : </strong>
+                                </template>
 
                                 {t.Name}
                             </td>

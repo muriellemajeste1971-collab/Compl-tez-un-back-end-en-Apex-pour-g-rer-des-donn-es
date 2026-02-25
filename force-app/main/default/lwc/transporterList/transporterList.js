@@ -1,15 +1,18 @@
-import { LightningElement, wire } from 'lwc';
-import getTarifications from '@salesforce/apex/TransporterSelector.getTarifications';
+import { LightningElement, api, wire } from 'lwc';
+import getTransporters from '@salesforce/apex/TransporterOrchestrator.getAllTransporters';
+
 
 export default class TransporterList extends LightningElement {
+    @api recordId;
     tarifs = [];
 
-    @wire(getTarifications)
+    @wire(getTransporters, { orderId: '$recordId' }) 
     wiredTarifs({ data, error }) {
         if (data && Array.isArray(data)) {
 
-            const cheapestId = data[0]?.Id;
-            const fastestId = data[1]?.Id;
+            
+            const fastestId = data[0]?.Id;
+            const cheapestId = data[1]?.Id;
 
             this.tarifs = data.map(t => ({
                 ...t,
