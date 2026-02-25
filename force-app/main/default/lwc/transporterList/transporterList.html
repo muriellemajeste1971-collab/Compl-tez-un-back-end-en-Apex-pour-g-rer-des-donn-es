@@ -1,13 +1,49 @@
 <template>
-    <lightning-card title="Sélectionnez un transporteur">
+    <lightning-card title="Sélectionnez un transporteur (France : Client Particulier)">
+
         <template if:true={tarifs}>
-            <ul>
-                <template for:each={tarifs} for:item="t">
-                    <li key={t.Id}>
-                        {t.Name} 
-                    </li>
-                </template>
-            </ul>
+            <table class="slds-table slds-table_cell-buffer slds-table_bordered slds-table_fixed-layout">
+                <thead>
+                    <tr class="slds-line-height_reset">
+                        <th style="width: 3rem;"></th>
+                        <th>Tarification</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    <template for:each={tarifs} for:item="t">
+                        <tr key={t.Id} class="slds-hint-parent">
+
+                            <!-- Case radio -->
+                            <td>
+                                <lightning-input
+                                    type="radio"
+                                    name="transportChoice"
+                                    value={t.Id}
+                                    onchange={handleSelection}>
+                                </lightning-input>
+                            </td>
+
+                            <!-- Texte -->
+                            <td>
+                                <template if:true={t.isFastest}>
+                                    <strong>Transporteur le plus rapide : </strong>
+                                </template>
+
+                                <template if:true={t.isCheapest}>
+                                    <strong>Transporteur le moins cher : </strong>
+                                </template>
+
+                                
+
+                                {t.Name}
+                            </td>
+
+                        </tr>
+                    </template>
+                </tbody>
+            </table>
         </template>
+
     </lightning-card>
 </template>
