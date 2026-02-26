@@ -13,24 +13,7 @@ export default class TransporterList extends LightningElement {
 
     tarifs = [];
     
-    get transporterLabel() {
-    const paysLabel = this.pays ?? '';
-    const typeClientLabel = this.typeClient ?? '';
-
-    if (paysLabel && typeClientLabel) {
-        return `Sélectionnez un Transporteur (${paysLabel} : Client ${typeClientLabel} )`;
-    }
-
-    if (paysLabel) {
-        return `Sélectionnez un Transporteur (${paysLabel})`;
-    }
-
-    if (typeClientLabel) {
-        return `Sélectionnez un Transporteur (Client ${typeClientLabel} )`;
-    }
-
-    return 'Sélectionnez un Transporteur';
-    }
+    
 
     @wire(getTransporters, { orderId: '$recordId' }) 
     wiredTarifs({ data, error }) {
@@ -51,7 +34,14 @@ export default class TransporterList extends LightningElement {
         }
     }
 
+    get transporterLabel() {
     
+
+        return `Sélectionnez un Transporteur (${this.pays} : Client ${this.typeClient } )`;
+   
+
+    
+    }
 
     get isCreateDisabled() {
         return !this.selectedTarificationId;
