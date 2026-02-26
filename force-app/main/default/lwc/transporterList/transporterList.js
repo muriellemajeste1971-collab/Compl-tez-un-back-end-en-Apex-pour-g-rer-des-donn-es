@@ -2,12 +2,14 @@ import { LightningElement, api, wire } from 'lwc';
 import { ShowToastEvent } from 'lightning/platformShowToastEvent';
 import getTransporters from '@salesforce/apex/TransporterOrchestrator.getAllTransporters';
 import createLivraison from '@salesforce/apex/OrderService.createLivraison';
+import { getRecord } from 'lightning/uiRecordApi';
+import PAYS_FIELD from '@salesforce/schema/Order.Pays__c';
+import TYPE_FIELD from '@salesforce/schema/Order.Account_Type__c';
+
 
 
 export default class TransporterList extends LightningElement {
     @api recordId;
-    @api pays;
-    @api typeClient;
     selectedTarificationId;
 
 
@@ -34,14 +36,24 @@ export default class TransporterList extends LightningElement {
         }
     }
 
+    @wire(getRecord, { recordId: '$recordId', fields: [PAYS_FIELD, TYPE_FIELD] })
+        order;
+
+    get pays() {
+        return this.order.data?.fields.Pays__c.value;
+        }
+
+    get typeClient() {
+        return this.order.data?.fields.Account_Type__c.value;
+        }
+    
     get transporterLabel() {
-    
 
-        return `Sélectionnez un Transporteur (${this.pays} : Client ${this.typeClient } )`;
-   
+        const pays = this.pays || 'non défini';
+        const typeClient = this.typeClient || 'non défini';
 
-    
-    }
+        return `Sélectionnez un Transporteur (${pays} : Client ${typeClient})`;
+        }
 
     get isCreateDisabled() {
         return !this.selectedTarificationId;

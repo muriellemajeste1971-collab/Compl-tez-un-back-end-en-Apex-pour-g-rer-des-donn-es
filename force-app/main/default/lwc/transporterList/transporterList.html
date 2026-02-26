@@ -3,10 +3,9 @@
             <lightning-button
                                 label="Bon de livraison"
                                 variant="neutral"
-                                onclick={handleCreateLivraison}
-                                disabled={isCreateDisabled}>
+                                onclick={handleCreateLivraison}>
             </lightning-button> </div>
-    <lightning-card title={transporterLabel} >
+    <lightning-card title={transporterLabel} icon-name="standard:shipment"  >
             
         <template if:true={tarifs}>
             <table class="slds-table slds-table_cell-buffer slds-table_bordered slds-table_fixed-layout">
