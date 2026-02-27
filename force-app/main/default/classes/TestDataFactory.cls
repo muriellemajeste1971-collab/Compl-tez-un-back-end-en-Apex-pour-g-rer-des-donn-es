@@ -1,76 +1,160 @@
-@isTest
+@IsTest
 public class TestDataFactory {
 
+    // ===== Helpers =====
+    private static String uniq(String prefix) {
+        return prefix + '_' + DateTime.now().getTime();
+    }
+
+    private static Pricebook2 getStdPricebook() {
+        Id pbId = Test.getStandardPricebookId();
+        Pricebook2 pb = [SELECT Id, IsActive FROM Pricebook2 WHERE Id = :pbId LIMIT 1];
+        if (!pb.IsActive) {
+            pb.IsActive = true;
+            update pb;
+        }
+        return pb;
+    }
+
+    private static Profile getProfile(String name) {
+        return [SELECT Id FROM Profile WHERE Name = :name LIMIT 1];
+    }
+
+    // ===== Account =====
     public static Account createAccount(String customerType) {
         Account a = new Account(
-            Name = 'Test Account ' + customerType
-            // TODO si tu as un champ qui pilote Account_Type__c sur Order:
-            // Customer_Type__c = customerType
+            Name = 'Account ' + uniq(customerType)
         );
         insert a;
         return a;
     }
 
-    public static Order createOrder(Id accountId, String status) {
-        // Standard Pricebook obligatoire pour OrderItem
-        Id stdPbId = Test.getStandardPricebookId();
+    // ===== User =====
+    public static User createStandardUser() {
+        Profile p = getProfile('Standard User');
+        String u = uniq('user');
+
+        User usr = new User(
+            FirstName = 'Test',
+            LastName = 'User',
+            Alias = 'tusr',
+            Email = u + '@test.com',
+            Username = u + '@test.com',
+            TimeZoneSidKey = 'Europe/Paris',
+            LocaleSidKey = 'fr_FR',
+            EmailEncodingKey = 'UTF-8',
+            LanguageLocaleKey = 'fr',
+            ProfileId = p.Id
+        );
+        insert usr;
+        return usr;
+    }
+
+    // ===== Order =====
+    public static Order createOrder(String accountName, Date effectiveDate, String status) {
+        Account acct = new Account(Name = accountName);
+        insert acct;
+
+        Pricebook2 pb = getStdPricebook();
 
         Order o = new Order(
-            AccountId = accountId,
-            EffectiveDate = Date.today(),
-            Status = status,
-            Pricebook2Id = stdPbId
+            AccountId = acct.Id,
+            EffectiveDate = effectiveDate == null ? Date.today() : effectiveDate,
+            Status = String.isBlank(status) ? 'Draft' : status,
+            Pricebook2Id = pb.Id
         );
         insert o;
         return o;
     }
 
+    // ===== Order Items =====
     public static void addOrderItems(Id orderId, Integer qtyTotal) {
-        // Produit + PricebookEntry requis pour OrderItem
-        Product2 p = new Product2(Name='Test Product', IsActive=true);
+        Pricebook2 pb = getStdPricebook();
+
+        Product2 p = new Product2(Name='Produit ' + uniq('P'), IsActive=true);
         insert p;
 
-        Id stdPbId = Test.getStandardPricebookId();
-
         PricebookEntry pbe = new PricebookEntry(
-            Pricebook2Id = stdPbId,
+            Pricebook2Id = pb.Id,
             Product2Id = p.Id,
             UnitPrice = 10,
-            IsActive = true
+            IsActive = true,
+            UseStandardPrice = false
         );
         insert pbe;
 
-        // On crée 1 ligne avec Quantity = qtyTotal (simple)
         OrderItem oi = new OrderItem(
             OrderId = orderId,
-            Quantity = qtyTotal,
+            Quantity = qtyTotal == null ? 1 : qtyTotal,
             UnitPrice = 10,
             PricebookEntryId = pbe.Id
         );
         insert oi;
     }
 
-    public static SObject createTransporteurIfNeeded() {
-        // Si Tarification__c a un lookup obligatoire vers Transporteur__c
-        // adapte l'API name si besoin
-        Transporteur__c t = new Transporteur__c(Name='Test Transporteur');
+    // ===== Transporteur =====
+    public static Transporteur__c createTransporter(String name, String clientType) {
+        Transporteur__c t = new Transporteur__c(
+            Name = name == null ? uniq('Transporteur') : name,
+            Customer_Type__c = clientType
+        );
         insert t;
         return t;
     }
 
-    public static Tarification__c createTarification(Id transporteurId) {
+    // ===== Tarification =====
+    public static Tarification__c createTarification(
+        Transporteur__c transporteur,
+        String pays,
+        Decimal cout,
+        Integer delai
+    ) {
         Tarification__c tar = new Tarification__c(
-            Name = 'Tarif Test'
-            // TODO si champ requis :
-            // Transporteur__c = transporteurId
-            // Pays__c = 'France', Delai__c = 1, Cout__c = 20, etc...
+            Name = transporteur.Name + ' - ' + pays,
+            Transporteur__c = transporteur.Id,
+            Zone_de_Livraison__c = pays,
+            Tarif_de_livraison__c = cout,
+            D_lai_de_livraison_jours__c = delai
         );
-        // Si tu as bien Transporteur__c obligatoire, décommente :
-        if (transporteurId != null) {
-            tar.put('Transporteur__c', transporteurId);
-        }
-
         insert tar;
         return tar;
+    }
+
+    // ===== Livraison =====
+    public static Livraison__c createLivraison(
+        Id orderId,
+        Id transporteurId,
+        String statut
+    ) {
+        Livraison__c liv = new Livraison__c(
+            Name = 'Livraison ' + uniq('L'),
+            Order__c = orderId,
+            Transporteur__c = transporteurId,
+            Statut__c = String.isBlank(statut) ? 'Brouillons' : statut
+        );
+        insert liv;
+        return liv;
+    }
+
+    // ===== Pack complet =====
+    public class LivraisonPack {
+        public Order orderRec;
+        public Transporteur__c transporteur;
+        public Tarification__c tarification;
+        public Livraison__c livraison;
+    }
+
+    public static LivraisonPack createLivraisonPack() {
+        LivraisonPack p = new LivraisonPack();
+
+        p.orderRec = createOrder('Account ' + uniq('A'), Date.today(), 'Draft');
+        addOrderItems(p.orderRec.Id, 2);
+
+        p.transporteur = createTransporter('Transporteur ' + uniq('T'), 'B2C');
+        p.tarification = createTarification(p.transporteur, 'FR', 10, 3);
+
+        p.livraison = createLivraison(p.orderRec.Id, p.transporteur.Id, 'Brouillons');
+
+        return p;
     }
 }
