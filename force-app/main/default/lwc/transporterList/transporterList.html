@@ -1,10 +1,28 @@
 <template>
     <div class="slds-text-align_right slds-m-top_medium"> 
-            <lightning-button
-                                label="Bon de livraison"
-                                variant="neutral"
-                                onclick={handleCreateLivraison}>
-            </lightning-button> </div>
+    <template if:false={hasLivraison}>
+        <lightning-button 
+                            label="Créer BDL" 
+                            variant="neutral"
+                            onclick={handleCreateLivraison}>
+        </lightning-button>
+   </template>
+    <template if:true={hasLivraison}>
+        <lightning-button 
+                            label="Modifier BDL" 
+                            variant="neutral"
+                            disabled={isUpdateDisabled}
+                            onclick={handleUpdate}>
+        </lightning-button>
+        <lightning-button 
+                            label="Supprimer BDL" 
+                            variant="neutral"
+                            class="slds-m-left_small"
+                            onclick={handleDelete}>
+        </lightning-button>
+    </template>
+    </div>
+
     <lightning-card title={transporterLabel} icon-name="standard:shipment"  >
             
         <template if:true={tarifs}>

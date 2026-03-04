@@ -1,38 +1,49 @@
-trigger OrderTrigger on Order (after insert, after update) {
+trigger OrderTrigger on Order (after insert, after update, before delete) {
 
-    List<Id> orderIdsToProcess = new List<Id>();
+    // --- AFTER INSERT / AFTER UPDATE ---
+    if (Trigger.isInsert || Trigger.isUpdate) {
 
-    for (Order ord : Trigger.new) {
+        List<Id> orderIdsToProcess = new List<Id>();
 
-        String accountType = ord.Account_Type__c;
-        Decimal nbProduits = ord.Product_Number__c;
+        for (Order ord : Trigger.new) {
 
-        if (nbProduits == null) nbProduits = 0;
+            String accountType = ord.Account_Type__c;
+            Decimal nbProduits = ord.Product_Number__c;
 
-        Boolean shouldProcess =
-            (accountType == 'Particulier' && nbProduits >= 3) ||
-            (accountType == 'Professionnel' && nbProduits >= 5);
+            if (nbProduits == null) nbProduits = 0;
 
-        if (!shouldProcess) continue;
+            Boolean shouldProcess =
+                (accountType == 'Particulier' && nbProduits >= 3) ||
+                (accountType == 'Professionnel' && nbProduits >= 5);
 
-        // Sur update : éviter de recalculer si rien n’a changé
-        if (Trigger.isUpdate) {
-            Order oldOrd = Trigger.oldMap.get(ord.Id);
+            if (!shouldProcess) continue;
 
-            Decimal oldNb = oldOrd.Product_Number__c;
-            if (oldNb == null) oldNb = 0;
+            // Sur update : éviter de recalculer si rien n’a changé
+            if (Trigger.isUpdate) {
+                Order oldOrd = Trigger.oldMap.get(ord.Id);
 
-            if (oldOrd.Account_Type__c == accountType &&
-                oldNb == nbProduits) {
-                continue;
+                Decimal oldNb = oldOrd.Product_Number__c;
+                if (oldNb == null) oldNb = 0;
+
+                if (oldOrd.Account_Type__c == accountType &&
+                    oldNb == nbProduits) {
+                    continue;
+                }
             }
+
+            orderIdsToProcess.add(ord.Id);
         }
 
-        orderIdsToProcess.add(ord.Id);
+        // appel orchestrateur uniquement pour les orders éligibles
+        for (Id oid : orderIdsToProcess) {
+            TransporterOrchestrator.getAllTransporters(oid);
+        }
     }
 
-    // appel orchestrateur uniquement pour les orders éligibles
-    for (Id oid : orderIdsToProcess) {
-        TransporterOrchestrator.getAllTransporters(oid);
+    // --- BEFORE DELETE ---
+    if (Trigger.isDelete) {
+        for (Order ord : Trigger.old) {
+            OrderService.deleteLivraisonsByOrder(ord.Id);
+        }
     }
 }

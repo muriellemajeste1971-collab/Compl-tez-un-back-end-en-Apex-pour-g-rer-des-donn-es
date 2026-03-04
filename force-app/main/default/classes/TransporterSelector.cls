@@ -44,7 +44,7 @@ public with sharing class TransporterSelector {
 
         List<Tarification__c> result = new List<Tarification__c>();
         if (fastest != null) result.add(fastest);
-        if (cheapest != null && cheapest.Id != fastestId) result.add(cheapest);
+        if (cheapest != null) result.add(cheapest);
 
         List<Tarification__c> others = new List<Tarification__c>();
         for (Tarification__c t : tarifs) {
