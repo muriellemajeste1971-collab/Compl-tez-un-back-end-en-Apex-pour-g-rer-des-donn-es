@@ -1,5 +1,6 @@
 public with sharing class TransporterSelector {
-     @AuraEnabled(cacheable=true)
+
+    @AuraEnabled(cacheable=true)
     public static List<Tarification__c> getAll(Id orderId, String pays, String typeClient) {
         
         // On récupère le transporteur le moins cher

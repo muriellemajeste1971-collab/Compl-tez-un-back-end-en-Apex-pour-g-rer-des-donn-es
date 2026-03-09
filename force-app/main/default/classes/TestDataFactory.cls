@@ -1,160 +1,302 @@
-@IsTest
+@isTest
 public class TestDataFactory {
 
-    // ===== Helpers =====
-    private static String uniq(String prefix) {
-        return prefix + '_' + DateTime.now().getTime();
-    }
+    // ---------------------------------------------------------
+    // 1. Données pour les tests Opportunity / Product
+    // ---------------------------------------------------------
+    public static OpportunityLineItem createOpportunityLineItem() {
+        Id stdPbId = Test.getStandardPricebookId();
 
-    private static Pricebook2 getStdPricebook() {
-        Id pbId = Test.getStandardPricebookId();
-        Pricebook2 pb = [SELECT Id, IsActive FROM Pricebook2 WHERE Id = :pbId LIMIT 1];
-        if (!pb.IsActive) {
-            pb.IsActive = true;
-            update pb;
-        }
-        return pb;
-    }
-
-    private static Profile getProfile(String name) {
-        return [SELECT Id FROM Profile WHERE Name = :name LIMIT 1];
-    }
-
-    // ===== Account =====
-    public static Account createAccount(String customerType) {
-        Account a = new Account(
-            Name = 'Account ' + uniq(customerType)
+        Pricebook2 stdPb = new Pricebook2(
+            Id = stdPbId,
+            IsActive = true
         );
-        insert a;
-        return a;
+        update stdPb;
+
+        Product2 p0 = new Product2(
+            Name = 'Audi e-Tron',
+            ProductCode = 'AUDI-ET',
+            IsActive = true
+        );
+        insert p0;
+        
+        List<Product2> produits = new List<Product2>{
+        new Product2(Name = 'Produit 1', IsActive = true),
+        new Product2(Name = 'Produit 2', IsActive = true),  
+        new Product2(Name = 'Produit 3', IsActive = true), 
+        new Product2(Name = 'Produit 4', IsActive = true)
+	    };
+	    insert produits;
+
+        PricebookEntry stdPbe = new PricebookEntry(
+            Pricebook2Id = stdPbId,
+            Product2Id = p0.Id,
+            UnitPrice = 50000,
+            IsActive = true
+        );
+        insert stdPbe;
+        
+        Id pbId = Test.getStandardPricebookId();
+
+		List<PricebookEntry> pbes = new List<PricebookEntry>();
+		for (Product2 p2 : produits) {
+    	pbes.add(new PricebookEntry(
+        Pricebook2Id = pbId,
+        Product2Id = p2.Id,
+        UnitPrice = 10000,
+        IsActive = true
+    ) );
+   }
+   insert pbes;
+
+
+        Pricebook2 customPb = new Pricebook2(
+            Name = 'Test Pricebook',
+            IsActive = true
+        );
+        insert customPb;
+
+        PricebookEntry customPbe = new PricebookEntry(
+            Pricebook2Id = customPb.Id,
+            Product2Id = p0.Id,
+            UnitPrice = 50000,
+            IsActive = true
+        );
+        insert customPbe;
+
+        Opportunity opp = new Opportunity(
+            Name = 'Test Opportunity',
+            StageName = 'Prospecting',
+            CloseDate = Date.today()
+        );
+        insert opp;
+
+        OpportunityLineItem oli = new OpportunityLineItem(
+            OpportunityId = opp.Id,
+            PricebookEntryId = customPbe.Id,
+            Quantity = 2,
+            UnitPrice = 50000
+        );
+        insert oli;
+
+        return oli;
     }
 
-    // ===== User =====
-    public static User createStandardUser() {
-        Profile p = getProfile('Standard User');
-        String u = uniq('user');
 
-        User usr = new User(
+    
+    
+    
+
+    // ---------------------------------------------------------
+    // 2. Données pour les tests User / Profil
+    // ---------------------------------------------------------
+    public static User createTestUser() {
+
+        Profile p = [
+            SELECT Id
+                FROM Profile
+                WHERE Name IN ('System Administrator', 'Administrateur Système')
+            LIMIT 1
+        ];
+
+        User testUser = new User(
             FirstName = 'Test',
             LastName = 'User',
-            Alias = 'tusr',
-            Email = u + '@test.com',
-            Username = u + '@test.com',
+            Email = 'test.user@example.com',
+            Username = 'test.user+' + System.currentTimeMillis() + '@example.com',
+            Alias = 'tuser',
             TimeZoneSidKey = 'Europe/Paris',
             LocaleSidKey = 'fr_FR',
             EmailEncodingKey = 'UTF-8',
             LanguageLocaleKey = 'fr',
             ProfileId = p.Id
         );
-        insert usr;
-        return usr;
+
+        insert testUser;
+
+        return testUser;
+    }
+    
+    	public static Account createAccount() {
+        
+     	Account a = new Account (
+								Name = 'Account 1', 
+         						Customer_Type__c = 'Particulier'); 
+        insert a;
+		return a;
+        
     }
 
-    // ===== Order =====
-    public static Order createOrder(String accountName, Date effectiveDate, String status) {
-        Account acct = new Account(Name = accountName);
-        insert acct;
+   		public static Contract createContract(Id accountId) {
+        
+     	Contract c = new Contract (
+								Name = 'Contract 1 for Account 1', 
+         						AccountId = accountId,
+     							StartDate = Date.Today(),
+     							Status = 'Draft'); 
+        insert c;
+        
+        c.Status ='Activated';
+        c.ActivatedDate = Date.Today();
+        update c;
+ 		return c;
+        
+    }
+    
+     
+    public static Order createOrder(Id accountId, Id contractId) {
+	// 1. Récupération du standard pricebook
+   		 Id pbId = Test.getStandardPricebookId();
 
-        Pricebook2 pb = getStdPricebook();
+        
+    // 2. Création de la commande
+    	Order o = new Order(
+        					Name = 'Order 1 for Account 1',
+        					AccountId = accountId,
+        					ContractId = contractId,
+            				Pricebook2Id = pbId,
+        					Status = 'Draft',
+        					ShippingCountry = 'FR',
+        					EffectiveDate = Date.today()
+    						);
+    	insert o;
 
-        Order o = new Order(
-            AccountId = acct.Id,
-            EffectiveDate = effectiveDate == null ? Date.today() : effectiveDate,
-            Status = String.isBlank(status) ? 'Draft' : status,
-            Pricebook2Id = pb.Id
+   
+
+    // 3. création des bijoux
+	     Product2 p1 = new Product2(
+            Name = 'Bijoux 1',
+            ProductCode = 'BJ01',
+            IsActive = true
         );
-        insert o;
-        return o;
-    }
-
-    // ===== Order Items =====
-    public static void addOrderItems(Id orderId, Integer qtyTotal) {
-        Pricebook2 pb = getStdPricebook();
-
-        Product2 p = new Product2(Name='Produit ' + uniq('P'), IsActive=true);
-        insert p;
-
-        PricebookEntry pbe = new PricebookEntry(
-            Pricebook2Id = pb.Id,
-            Product2Id = p.Id,
-            UnitPrice = 10,
-            IsActive = true,
-            UseStandardPrice = false
+        insert p1;
+        
+         Product2 p2 = new Product2(
+            Name = 'Bijoux 2',
+            ProductCode = 'BJ02',
+            IsActive = true
         );
-        insert pbe;
-
-        OrderItem oi = new OrderItem(
-            OrderId = orderId,
-            Quantity = qtyTotal == null ? 1 : qtyTotal,
-            UnitPrice = 10,
-            PricebookEntryId = pbe.Id
+		insert p2;
+        
+         Product2 p3 = new Product2(
+            Name = 'Bijoux 3',
+            ProductCode = 'BJ03',
+            IsActive = true
         );
-        insert oi;
-    }
-
-    // ===== Transporteur =====
-    public static Transporteur__c createTransporter(String name, String clientType) {
-        Transporteur__c t = new Transporteur__c(
-            Name = name == null ? uniq('Transporteur') : name,
-            Customer_Type__c = clientType
+        insert p3;
+        
+       // 4. création des bijoux
+        
+       PricebookEntry e1 = new PricebookEntry(
+            Pricebook2Id = pbId,
+            Product2Id = p1.Id,
+            UnitPrice = 10000,
+            IsActive = true
         );
-        insert t;
-        return t;
-    }
-
-    // ===== Tarification =====
-    public static Tarification__c createTarification(
-        Transporteur__c transporteur,
-        String pays,
-        Decimal cout,
-        Integer delai
-    ) {
-        Tarification__c tar = new Tarification__c(
-            Name = transporteur.Name + ' - ' + pays,
-            Transporteur__c = transporteur.Id,
-            Zone_de_Livraison__c = pays,
-            Tarif_de_livraison__c = cout,
-            D_lai_de_livraison_jours__c = delai
+        insert e1;
+        
+    	PricebookEntry e2 = new PricebookEntry(
+            Pricebook2Id = pbId,
+            Product2Id = p2.Id,
+            UnitPrice = 20000,
+            IsActive = true
         );
-        insert tar;
-        return tar;
-    }
+        insert e2;
 
-    // ===== Livraison =====
-    public static Livraison__c createLivraison(
-        Id orderId,
-        Id transporteurId,
-        String statut
-    ) {
-        Livraison__c liv = new Livraison__c(
-            Name = 'Livraison ' + uniq('L'),
-            Order__c = orderId,
-            Transporteur__c = transporteurId,
-            Statut__c = String.isBlank(statut) ? 'Brouillons' : statut
+     	PricebookEntry e3 = new PricebookEntry(
+            Pricebook2Id = pbId,
+            Product2Id = p3.Id,
+            UnitPrice = 30000,
+            IsActive = true
         );
-        insert liv;
-        return liv;
+        insert e3;
+    
+
+    // 4. Création des OrderItems
+       OrderItem oi1 = new OrderItem(
+            OrderId = o.Id,
+            PricebookEntryId = e1.Id,
+            Product2Id = p1.Id,
+            Quantity = 2,
+            UnitPrice = 10000
+        );
+        insert oi1;
+
+ 		OrderItem oi2 = new OrderItem(
+            OrderId = o.Id,
+            PricebookEntryId = e2.Id,
+            Product2Id = p2.Id,
+            Quantity = 1,
+            UnitPrice = 20000
+        );
+        insert oi2;
+        
+        OrderItem oi3 = new OrderItem(
+            OrderId = o.Id,
+            PricebookEntryId = e3.Id,
+            Product2Id = p3.Id,
+            Quantity = 1,
+            UnitPrice = 30000
+        );
+        insert oi3;
+        
+        
+    // 5. Activation de la commande
+    o.Status = 'Activated';
+    o.ActivatedDate = Date.today();
+    update o;
+
+    return o;
+}
+
+    
+    public static Transporteur__c createTransporteur(String typeClient) {
+        
+     Transporteur__c tr = new Transporteur__c (
+        Name = 'Transporteur 1', 
+        Customer_Type__c = typeClient ); 
+        insert tr;
+		return tr;
+        
     }
+    
+    
+    public static List<Tarification__c> createTarificationList() {
 
-    // ===== Pack complet =====
-    public class LivraisonPack {
-        public Order orderRec;
-        public Transporteur__c transporteur;
-        public Tarification__c tarification;
-        public Livraison__c livraison;
-    }
+    List<Tarification__c> liste = new List<Tarification__c>();
+        
+    Transporteur__c tr = createTransporteur('Particulier');
 
-    public static LivraisonPack createLivraisonPack() {
-        LivraisonPack p = new LivraisonPack();
+    Tarification__c t1 = new Tarification__c(
+        Name = 'Transporteur 1 (France : Particulier ; 7 € ; 6 jours)',
+        Zone_de_livraison__c = 'France',
+        Tarif_de_livraison__c = 7,
+        D_lai_de_Livraison_jours__c = 6,
+        Transporteur__c = tr.Id
+    );
 
-        p.orderRec = createOrder('Account ' + uniq('A'), Date.today(), 'Draft');
-        addOrderItems(p.orderRec.Id, 2);
+    Tarification__c t2 = new Tarification__c(
+        Name = 'Transporteur 2 (France : Particulier)',
+        Zone_de_livraison__c = 'France',
+        Tarif_de_livraison__c = 10,
+        D_lai_de_Livraison_jours__c = 4,
+        Transporteur__c = tr.Id
+    );
 
-        p.transporteur = createTransporter('Transporteur ' + uniq('T'), 'B2C');
-        p.tarification = createTarification(p.transporteur, 'FR', 10, 3);
+    Tarification__c t3 = new Tarification__c(
+        Name = 'Transporteur 3 (France : Particulier ; 20€ ; 1 jour)',
+        Zone_de_livraison__c = 'France',
+        Tarif_de_livraison__c = 20,
+        D_lai_de_Livraison_jours__c = 1,
+        Transporteur__c = tr.Id
+    );
 
-        p.livraison = createLivraison(p.orderRec.Id, p.transporteur.Id, 'Brouillons');
+    liste.add(t1);
+    liste.add(t2);
+    liste.add(t3);
 
-        return p;
-    }
+    insert liste;
+    return liste;
+ }
+
 }
