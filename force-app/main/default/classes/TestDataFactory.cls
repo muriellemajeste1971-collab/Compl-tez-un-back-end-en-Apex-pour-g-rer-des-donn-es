@@ -90,16 +90,11 @@ public class TestDataFactory {
     // ---------------------------------------------------------
     // 2. Données pour les tests User / Profil
     // ---------------------------------------------------------
-    public static User createTestUser() {
+    public static User createUser() {
 
-        Profile p = [
-            SELECT Id
-                FROM Profile
-                WHERE Name IN ('System Administrator', 'Administrateur Système')
-            LIMIT 1
-        ];
+        Profile p = [SELECT Id FROM Profile WHERE Name = 'Sales' LIMIT 1];
 
-        User testUser = new User(
+        User u = new User(
             FirstName = 'Test',
             LastName = 'User',
             Email = 'test.user@example.com',
@@ -112,10 +107,12 @@ public class TestDataFactory {
             ProfileId = p.Id
         );
 
-        insert testUser;
-
-        return testUser;
+        insert u;
+        return u;
     }
+
+      
+    
     
     	public static Account createAccount() {
         
