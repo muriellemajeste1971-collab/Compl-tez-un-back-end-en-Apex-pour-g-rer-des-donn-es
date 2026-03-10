@@ -1,16 +1,16 @@
-Id;Nom;Type Client
-1;Chronopost;Particulier, Professionnel
-2;DHL Express;Professionnel
-3;La Poste;Particulier
-4;UPS;Particulier, Professionnel
-5;FedEx;Professionnel
-6;GLS;Particulier
-7;Mondial Relay;Particulier
-8;TNT;Professionnel
-9;Colis Privé;Particulier
-10;DB Schenker;Professionnel
-11;Geodis;Particulier, Professionnel
-12;Amazon Logistics;Particulier
-13;DPD;Particulier, Professionnel
-14;XPO Logistics;Professionnel
-15;Hermes;Particulier
+Id;Name;Customer Type;SfId
+1;Chronopost;Particulier, Professionnel;a00Qy000027B7nVIAS
+2;DHL Express;Professionnel;a00Qy000027B7nWIAS
+3;La Poste;Particulier;a00Qy000027B7nXIAS
+4;UPS;Particulier, Professionnel;a00Qy000027B7nYIAS
+5;FedEx;Professionnel;a00Qy000027B7nZIAS
+6;GLS;Particulier;a00Qy000027B7naIAC
+7;Mondial Relay;Particulier;a00Qy000027B7nbIAC
+8;TNT;Professionnel;a00Qy000027B7ncIAC
+9;Colis Privé;Particulier;a00Qy000027B7ndIAC
+10;DB Schenker;Professionnel;a00Qy000027B7neIAC
+11;Geodis;Particulier, Professionnel;a00Qy000027B7nfIAC
+12;Amazon Logistics;Particulier;a00Qy000027B7ngIAC
+13;DPD;Particulier, Professionnel;a00Qy000027B7nhIAC
+14;XPO Logistics;Professionnel;a00Qy000027B7niIAC
+15;Hermes;Particulier;a00Qy000027B7njIAC

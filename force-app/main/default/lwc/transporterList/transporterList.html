@@ -1,0 +1,78 @@
+<template>
+    <div class="slds-text-align_right slds-m-top_medium"> 
+    <template if:false={hasLivraison}>
+        <lightning-button 
+                            label="Créer BDL" 
+                            variant="neutral"
+                            onclick={handleCreateLivraison}>
+        </lightning-button>
+   </template>
+    <template if:true={hasLivraison}>
+        <lightning-button 
+                            label="Modifier BDL" 
+                            variant="neutral"
+                            disabled={isUpdateDisabled}
+                            onclick={handleUpdate}>
+        </lightning-button>
+        <lightning-button 
+                            label="Supprimer BDL" 
+                            variant="neutral"
+                            class="slds-m-left_small"
+                            onclick={handleDelete}>
+        </lightning-button>
+    </template>
+    </div>
+
+    <lightning-card title={transporterLabel} icon-name="standard:shipment"  >
+            
+        <template if:true={tarifs}>
+            <table class="slds-table slds-table_cell-buffer slds-table_bordered slds-table_fixed-layout">
+                <thead>
+                    <tr class="slds-line-height_reset">
+                        <th style="width: 3rem;"></th>
+                        <th>Tarification</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    <template for:each={tarifs} for:item="t">
+                        <tr key={t.Id} class="slds-hint-parent">
+
+                            <!-- Case radio -->
+                            <td>
+                                <lightning-input
+                                    type="radio"
+                                    name="transportChoice"
+                                    value={t.Id}
+                                    onchange={handleSelection}>
+                                </lightning-input>
+                            </td>
+
+                            <!-- Texte -->
+                            <td>
+                                
+
+                                <template if:true={t.isCheapest}>
+                                    <strong>Transporteur le moins cher : </strong>
+                                </template>
+
+                                <template if:true={t.isFastest}>
+                                    <strong>Transporteur le plus rapide : </strong>
+                                </template>
+
+                                {t.Name}
+                            </td>
+
+                        </tr>
+                    </template>
+                </tbody>
+            </table>
+
+          
+           
+       
+        </template>
+              
+    </lightning-card>
+            
+</template>
