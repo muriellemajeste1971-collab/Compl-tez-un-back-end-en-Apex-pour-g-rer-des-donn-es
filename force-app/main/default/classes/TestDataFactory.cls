@@ -84,8 +84,6 @@ public class TestDataFactory {
 
 
     
-    
-    
 
     // ---------------------------------------------------------
     // 2. Données pour les tests User / Profil
@@ -95,7 +93,7 @@ public class TestDataFactory {
         Profile p = [SELECT Id FROM Profile WHERE Name = 'Sales' LIMIT 1];
 
         User u = new User(
-            FirstName = 'Test',
+            FirstName = 'Test User',
             LastName = 'User',
             Email = 'test.user@example.com',
             Username = 'test.user+' + System.currentTimeMillis() + '@example.com',
@@ -111,189 +109,264 @@ public class TestDataFactory {
         return u;
     }
 
+    public static User createRestrictedUser() {
+
+        Profile p = [SELECT Id FROM Profile WHERE Name = 'Chatter Free User' LIMIT 1];
+    
+        User u = new User(
+            FirstName = 'Test User',
+            LastName = 'Restricted',
+            Email = 'restricted@example.com',
+            Username = 'restricted@example.com',
+            Alias = 'restr',
+            TimeZoneSidKey = 'Europe/Paris',
+            LocaleSidKey = 'fr_FR',
+            EmailEncodingKey = 'UTF-8',
+            LanguageLocaleKey = 'fr',
+            ProfileId = p.Id
+        );
+
+        insert u;
+        return u;
+    }
+
+    
+    	public static List<Account> createAccounts(Integer num, String customerType, String shippingCountry ) {
+        
+     	List<Account> accts = new List<Account>();
+
+        for (Integer i = 1; i <= num; i++) {
+            Account a = new Account( Name = 'Account ' + i, Customer_Type__c = customerType, ShippingCountry = shippingCountry);
+            accts.add(a);
+        }
+								
+        insert accts;	
+        return accts;
+        
+        }
+
+   		public static List<Order> createOrders(List<Id> accountIds, Integer numberOfProducts, Integer numberOfOrders) {
+
+        // 1. Standard Pricebook
+        Id pbId = Test.getStandardPricebookId();
+
+        // 2. Création des Contracts (Draft)
+        List<Contract> contracts = new List<Contract>();
+
+        for (Id accId : accountIds) {
+            for (Integer i = 0; i < numberOfOrders; i++) {
+                Contract c = new Contract(
+                    Name = 'Contract ' + i,
+                    ContractTerm = 12,
+                    AccountId = accId,
+                    StartDate = Date.today(),
+                    Status = 'Draft'
+                );
+            contracts.add(c);
+            }
+        }
+
+        insert contracts;
+
+        // Activation des Contracts
+        for (Contract c : contracts) {
+            c.Status = 'Activated';
+            c.ActivatedDate = Date.today();
+        }
+
+        update contracts;
+
+        // 0. Récupération des Accounts
+         List<Account> accs = [
+             SELECT Id, ShippingCountry
+             FROM Account
+            WHERE Id IN :accountIds
+         ];
+
+        Map<Id, Account> accMap = new Map<Id, Account>(accs);
+
+         // 3. Création des Orders (Draft)
+        List<Order> orders = new List<Order>();
+        // Index pour parcourir les contrats et lier au bon order !
+        Integer contractIndex = 0;
+
+            for (Id accId : accountIds) {
+
+                 Account acc = accMap.get(accId);
+
+        for (Integer j = 0; j < numberOfOrders; j++) {
+
+            Order o = new Order(
+                Name = 'Order ' + j,
+                AccountId = accId,
+                ContractId = contracts[contractIndex].Id,
+                Pricebook2Id = pbId,
+                Status = 'Draft',
+                ShippingCountry = acc.ShippingCountry,
+                EffectiveDate = Date.today()
+            );
+
+            orders.add(o);
+            contractIndex++;
+         }
+        }
+
+        insert orders;
+
+        // 4. Création des Products
+         List<Product2> products = new List<Product2>();
+
+        for (Integer i = 0; i < numberOfProducts; i++) {
+        Product2 p2 = new Product2(
+            Name = 'Product ' + (i+1),
+            ProductCode = 'P2' + (i+1),
+            IsActive = true
+        );
+        products.add(p2);
+        }
+
+        insert products;
+
+        // 5. PricebookEntries
+        List<PricebookEntry> entries = new List<PricebookEntry>();
+
+        for (Product2 p : products) {
+            PricebookEntry pe = new PricebookEntry(
+                Pricebook2Id = pbId,
+                Product2Id = p.Id,
+                UnitPrice = 10000,
+                IsActive = true
+            );
+        entries.add(pe);
+        }
+
+        insert entries;
+
+        // 6. OrderItems
+        List<OrderItem> items = new List<OrderItem>();
+
+        for (Order o : orders) {
+                for (Integer i = 0; i < numberOfProducts; i++) {
+
+                    OrderItem oi = new OrderItem(
+                        OrderId = o.Id,
+                        PricebookEntryId = entries[i].Id,
+                        Product2Id = products[i].Id,
+                        Quantity = 1,
+                        UnitPrice = entries[i].UnitPrice
+                    );
+
+            items.add(oi);
+            }
+        }
+
+        insert items;
+
+        // 7. Activation des Orders
+         for (Order o : orders) {
+             o.Status = 'Activated';
+            o.ActivatedDate = Date.today();
+        }
+
+        update orders;
+
+        return orders;
+    }
+
+    
+    public static List<Tarification__c> createTarifs() {
+
+     // 1. Création des Transporteurs
+        List<Transporteur__c> transportors = new List<Transporteur__c>();    
+
+        Transporteur__c chrono = new Transporteur__c (Name = 'Chronopost', Customer_Type__c = 'Particulier, Professionnel');  
+        Transporteur__c ups = new Transporteur__c (Name = 'UPS', Customer_Type__c = 'Particulier, Professionnel');
+        Transporteur__c geodis = new Transporteur__c (Name = 'Geodis', Customer_Type__c = 'Particulier, Professionnel');
+        Transporteur__c dhl = new Transporteur__c (Name = 'DHL Express', Customer_Type__c = 'Professionnel');    
+        Transporteur__c gls = new Transporteur__c (Name = 'GLS', Customer_Type__c = 'Particulier');
+
+        transportors.add(chrono);
+        transportors.add(ups);
+        transportors.add(geodis);
+        transportors.add(dhl);
+        transportors.add(gls);
+
+        insert transportors;   
+
+     // 2. Création des Tarifications
+        List<Tarification__c> tarifs = new List<Tarification__c>();
       
-    
-    
-    	public static Account createAccount() {
-        
-     	Account a = new Account (
-								Name = 'Account 1', 
-         						Customer_Type__c = 'Particulier'); 
-        insert a;
-		return a;
-        
-    }
+        // France - Particulier
+        Tarification__c c1 = new Tarification__c(Zone_de_livraison__c = 'France', Tarif_de_livraison__c = 20, D_lai_de_Livraison_jours__c = 1, Transporteur__c = chrono.Id);
+        Tarification__c c2 = new Tarification__c(Zone_de_livraison__c = 'France', Tarif_de_livraison__c = 23, D_lai_de_Livraison_jours__c = 2, Transporteur__c = ups.Id); 
+        Tarification__c c3 = new Tarification__c(Zone_de_livraison__c = 'France', Tarif_de_livraison__c = 18, D_lai_de_Livraison_jours__c = 2, Transporteur__c = geodis.Id);
+        Tarification__c c4 = new Tarification__c(Zone_de_livraison__c = 'France', Tarif_de_livraison__c = 14, D_lai_de_Livraison_jours__c = 3, Transporteur__c = gls.Id);
 
-   		public static Contract createContract(Id accountId) {
-        
-     	Contract c = new Contract (
-								Name = 'Contract 1 for Account 1', 
-         						AccountId = accountId,
-     							StartDate = Date.Today(),
-     							Status = 'Draft'); 
-        insert c;
-        
-        c.Status ='Activated';
-        c.ActivatedDate = Date.Today();
-        update c;
- 		return c;
-        
-    }
-    
-     
-    public static Order createOrder(Id accountId, Id contractId) {
-	// 1. Récupération du standard pricebook
-   		 Id pbId = Test.getStandardPricebookId();
-
-        
-    // 2. Création de la commande
-    	Order o = new Order(
-        					Name = 'Order 1 for Account 1',
-        					AccountId = accountId,
-        					ContractId = contractId,
-            				Pricebook2Id = pbId,
-        					Status = 'Draft',
-        					ShippingCountry = 'FR',
-        					EffectiveDate = Date.today()
-    						);
-    	insert o;
-
+        // Belgique - Professionnel
+        Tarification__c c5 = new Tarification__c(Zone_de_livraison__c = 'Belgique', Tarif_de_livraison__c = 25, D_lai_de_Livraison_jours__c = 2, Transporteur__c = dhl.Id);
+        Tarification__c c6 = new Tarification__c(Zone_de_livraison__c = 'Belgique', Tarif_de_livraison__c = 18, D_lai_de_Livraison_jours__c = 3, Transporteur__c = chrono.Id); 
+        Tarification__c c7 = new Tarification__c(Zone_de_livraison__c = 'Belgique', Tarif_de_livraison__c = 20, D_lai_de_Livraison_jours__c = 3, Transporteur__c = ups.Id);
    
+        tarifs.add(c1);
+        tarifs.add(c2);
+        tarifs.add(c3);
+        tarifs.add(c4);
+        tarifs.add(c5);
+        tarifs.add(c6);
+        tarifs.add(c7);
 
-    // 3. création des bijoux
-	     Product2 p1 = new Product2(
-            Name = 'Bijoux 1',
-            ProductCode = 'BJ01',
-            IsActive = true
-        );
-        insert p1;
-        
-         Product2 p2 = new Product2(
-            Name = 'Bijoux 2',
-            ProductCode = 'BJ02',
-            IsActive = true
-        );
-		insert p2;
-        
-         Product2 p3 = new Product2(
-            Name = 'Bijoux 3',
-            ProductCode = 'BJ03',
-            IsActive = true
-        );
-        insert p3;
-        
-       // 4. création des bijoux
-        
-       PricebookEntry e1 = new PricebookEntry(
-            Pricebook2Id = pbId,
-            Product2Id = p1.Id,
-            UnitPrice = 10000,
-            IsActive = true
-        );
-        insert e1;
-        
-    	PricebookEntry e2 = new PricebookEntry(
-            Pricebook2Id = pbId,
-            Product2Id = p2.Id,
-            UnitPrice = 20000,
-            IsActive = true
-        );
-        insert e2;
+        insert tarifs;
 
-     	PricebookEntry e3 = new PricebookEntry(
-            Pricebook2Id = pbId,
-            Product2Id = p3.Id,
-            UnitPrice = 30000,
-            IsActive = true
-        );
-        insert e3;
-    
-
-    // 4. Création des OrderItems
-       OrderItem oi1 = new OrderItem(
-            OrderId = o.Id,
-            PricebookEntryId = e1.Id,
-            Product2Id = p1.Id,
-            Quantity = 2,
-            UnitPrice = 10000
-        );
-        insert oi1;
-
- 		OrderItem oi2 = new OrderItem(
-            OrderId = o.Id,
-            PricebookEntryId = e2.Id,
-            Product2Id = p2.Id,
-            Quantity = 1,
-            UnitPrice = 20000
-        );
-        insert oi2;
-        
-        OrderItem oi3 = new OrderItem(
-            OrderId = o.Id,
-            PricebookEntryId = e3.Id,
-            Product2Id = p3.Id,
-            Quantity = 1,
-            UnitPrice = 30000
-        );
-        insert oi3;
-        
-        
-    // 5. Activation de la commande
-    o.Status = 'Activated';
-    o.ActivatedDate = Date.today();
-    update o;
-
-    return o;
-}
-
-    
-    public static Transporteur__c createTransporteur(String typeClient) {
-        
-     Transporteur__c tr = new Transporteur__c (
-        Name = 'Transporteur 1', 
-        Customer_Type__c = typeClient ); 
-        insert tr;
-		return tr;
-        
+        return tarifs;
+       
     }
-    
-    
-    public static List<Tarification__c> createTarificationList() {
+  
 
-    List<Tarification__c> liste = new List<Tarification__c>();
-        
-    Transporteur__c tr = createTransporteur('Particulier');
+    public static List<Livraison__c> createDeliveryOrders(List<Account> accounts, List<Order> orders) {
+    List<Livraison__c> deliveries = new List<Livraison__c>();
 
-    Tarification__c t1 = new Tarification__c(
-        Name = 'Transporteur 1 (France : Particulier ; 7 € ; 6 jours)',
-        Zone_de_livraison__c = 'France',
-        Tarif_de_livraison__c = 7,
-        D_lai_de_Livraison_jours__c = 6,
-        Transporteur__c = tr.Id
-    );
+    for (Order o : orders) {
 
-    Tarification__c t2 = new Tarification__c(
-        Name = 'Transporteur 2 (France : Particulier)',
-        Zone_de_livraison__c = 'France',
-        Tarif_de_livraison__c = 10,
-        D_lai_de_Livraison_jours__c = 4,
-        Transporteur__c = tr.Id
-    );
+        // 1. Récupérer la zone depuis l’Account
+        String zone = accounts[0].ShippingCountry;
 
-    Tarification__c t3 = new Tarification__c(
-        Name = 'Transporteur 3 (France : Particulier ; 20€ ; 1 jour)',
-        Zone_de_livraison__c = 'France',
-        Tarif_de_livraison__c = 20,
-        D_lai_de_Livraison_jours__c = 1,
-        Transporteur__c = tr.Id
-    );
+        // 2. Récupérer les tarifs correspondant à cette zone
+        List<Tarification__c> tarifs = [
+            SELECT Id, Zone_de_Livraison__c, Tarif_de_Livraison__c, D_lai_de_Livraison_jours__c, Transporteur__c
+            FROM Tarification__c
+            WHERE Zone_de_Livraison__c = :zone
+        ];
 
-    liste.add(t1);
-    liste.add(t2);
-    liste.add(t3);
+        // 3. Sélection aléatoire via boucle
+        Tarification__c selectedTarif;
 
-    insert liste;
-    return liste;
- }
+        for (Tarification__c t : tarifs) {
+            if (Math.random() > 0.5) {
+                selectedTarif = t;
+            }
+        }
 
+        // 4. Si aucun n’a été choisi, prendre le premier
+        if (selectedTarif == null && !tarifs.isEmpty()) {
+            selectedTarif = tarifs[0];
+        }
+
+        // 5. Créer la livraison
+        Livraison__c d = new Livraison__c(
+            Account__c = o.AccountId,
+            Order__c = o.Id,
+            Tarification__c = selectedTarif != null ? selectedTarif.Id : null
+        );
+
+        deliveries.add(d);
+    }
+
+    insert deliveries;
+    return deliveries;
 }
+
+        
+}
+
+ 
+

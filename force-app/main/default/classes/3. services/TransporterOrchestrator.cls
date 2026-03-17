@@ -1,5 +1,6 @@
 public with sharing class TransporterOrchestrator {
 
+   
     @AuraEnabled(cacheable=true)
     public static List<Tarification__c> getAllTransporters(Id orderId) {
 
@@ -24,4 +25,5 @@ public with sharing class TransporterOrchestrator {
 
         return result;
     }
-}
+
+    }

@@ -1,5 +1,5 @@
 @IsTest
-public class TransporterSelectorTest {
+public class OrderTarifSelectorTest {
 
     @IsTest
     static void testFastestAndCheapest() {

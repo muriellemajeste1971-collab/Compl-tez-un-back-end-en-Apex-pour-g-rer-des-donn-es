@@ -1,4 +1,4 @@
-public with sharing class TransporterSelector {
+public with sharing class OrderTarifSelector {
 
     @AuraEnabled(cacheable=true)
     public static List<Tarification__c> getAll(Id orderId, String pays, String typeClient) {

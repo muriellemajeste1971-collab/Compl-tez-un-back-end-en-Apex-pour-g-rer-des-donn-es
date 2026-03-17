@@ -88,14 +88,15 @@ public with sharing class OrderService {
     // 5. SUPPRIMER automatiquement la Livraison si l’Order est supprimé
     //    (appelé par le trigger Order BEFORE DELETE)
     // ---------------------------------------------------------
-    public static void deleteLivraisonsByOrder(Id orderId) {
+    public static void deleteLivraisonsByOrders(Set<Id> orderIds) {
 
-        List<Livraison__c> livs = [
-            SELECT Id
-            FROM Livraison__c
-            WHERE Order__c = :orderId
-        ];
+        if (orderIds.isEmpty()) return;
 
-        delete livs;
+        // Appel au Selector (pas de SOQL ici)
+        List<Livraison__c> livs = LivraisonSelector.getByOrders(orderIds);
+
+        if (!livs.isEmpty()) {
+            delete livs;
+        }
     }
 }
