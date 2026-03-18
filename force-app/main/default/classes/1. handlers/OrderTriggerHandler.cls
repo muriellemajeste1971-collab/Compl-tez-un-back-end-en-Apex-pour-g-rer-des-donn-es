@@ -7,7 +7,10 @@ public with sharing class OrderTriggerHandler {
         }
 
         if(Trigger.isBefore && Trigger.isUpdate) {
-            OrderService.validateOrderBeforeUpdate(Trigger.oldMap, Trigger.newMap);
+            OrderService.validateOrderBeforeUpdate(
+                (Map<Id, Order>) Trigger.oldMap,
+                (Map<Id, Order>) Trigger.newMap
+            );
         }
 
         if(Trigger.isBefore && Trigger.isDelete) {

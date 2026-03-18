@@ -1,102 +1,122 @@
 public with sharing class OrderService {
 
-    // ---------------------------------------------------------
-    // 1. CREER une Livraison pour un Order
-    // ---------------------------------------------------------
-    @AuraEnabled
-    public static Id createLivraison(Id orderId, Id selectedTarificationId) {
+    public static void validateOrderBeforeInsert(List<Order> newList) { 
 
-        Order ord = [
-            SELECT Id, AccountId, Livraison_Name__c
-            FROM Order
-            WHERE Id = :orderId
-            LIMIT 1
-        ];
+        if (newList == null || newList.isEmpty()) {
+            return;
+        }
 
-        Livraison__c liv = new Livraison__c(
-            Name = ord.Livraison_Name__c,
-            Order__c = ord.Id,
-            Account__c = ord.AccountId,
-            Tarification__c = selectedTarificationId,
-            Statut__c = 'En cours'
-        );
-
-        insert liv;
-        return liv.Id;
+        validateOrder(newList);
     }
 
-    // ---------------------------------------------------------
-    // 2. RECUPERER la Livraison liée à un Order
-    // ---------------------------------------------------------
-    @AuraEnabled(cacheable=true)
-    public static Livraison__c getLivraisonByOrder(Id orderId) {
-        List<Livraison__c> livs = [
-            SELECT Id, Tarification__c, Statut__c
-            FROM Livraison__c
-            WHERE Order__c = :orderId
-            LIMIT 1
-        ];
-        return livs.isEmpty() ? null : livs[0];
+    public static void validateOrderBeforeUpdate(Map<Id, Order> oldMap, Map<Id, Order> newMap) {
+        
+        if (newMap == null || newMap.isEmpty()) {
+            return;
+        }
+
+        // Convert the values (which return a List<Order>) explicitly to List<Order> for clarity
+        List<Order> updatedOrders = new List<Order>(newMap.values());
+        validateOrder(updatedOrders);
     }
 
-    // ---------------------------------------------------------
-    // 3. METTRE A JOUR la Livraison liée à un Order
-    // (Supprime l'ancienne et en crée une nouvelle avec la nouvelle tarification)
-    // ---------------------------------------------------------
-    @AuraEnabled
-    public static Id updateLivraison(Id livraisonId, Id newTarificationId) {
-        Livraison__c liv = [
-            SELECT Id, Order__c, Name, Account__c, Statut__c
-            FROM Livraison__c
-            WHERE Id = :livraisonId
-            LIMIT 1
-        ];
+    public static void validateOrderBeforeDelete(List<Order> oldList) {
+        
+        if (oldList == null || oldList.isEmpty()) {
+            return;
+        }
 
-        // Supprimer l'ancienne livraison
-        delete liv;
-
-        // Créer une nouvelle livraison avec la nouvelle tarification
-        Livraison__c newLiv = new Livraison__c(
-            Name = liv.Name,
-            Order__c = liv.Order__c,
-            Account__c = liv.Account__c,
-            Tarification__c = newTarificationId,
-            Statut__c = liv.Statut__c
-        );
-
-        insert newLiv;
-        return newLiv.Id;
+        validateOrderDelete(oldList);
     }
+    
+    private static void validateOrder(List<Order> orders) {
 
+        // 1. collecter les Ids des commandes qui ont déclencher le trigger et les Ids du compte auxquel elles sont rattachés
+        Set<Id> orderIds = new Set<Id>();
+        Set<Id> accountIds = new Set<Id>();
+        
+        for (Order o : orders) {
+                orderIds.add(o.Id);
+                if (o.AccountId != null) {
+                    accountIds.add(o.AccountId);
+                }  
+        }
 
-    // ---------------------------------------------------------
-    // 4. SUPPRIMER la Livraison liée à un Order (bouton UI)
-    // ---------------------------------------------------------
-    @AuraEnabled
-    public static void deleteLivraison(Id orderId) {
+       // 2. récupérer les données sur les comptes associés aux Ids des commandes qui ont déclencher le trigger
+        List<Account> accounts = new List<Account>();
+        accounts = AccountSelector.getAccountsByIds(accountIds);
+        Map<Id, Account> accountsById = new Map<Id, Account>(accounts);
 
-        List<Livraison__c> livs = [
-            SELECT Id
-            FROM Livraison__c
-            WHERE Order__c = :orderId
-        ];
+        // 3. récupérer les données sur le nombre total de produits pour les commandes qui ont déclencher le trigger
+        Map<Id, Integer> qtyByOrder = new Map<Id, Integer>();
+        qtyByOrder = OrderItemSelector.TotalQuantityByOrder(orderIds);
 
-        delete livs;
-    }
+        // 4. pour chaque commande qui a déclenché le trigger récupérer sur le compte le type de compte et le nombre total de produits
+        // et appliquer les règles métiers minimum 3 produits pour un compte particulier et minimum 5 produits pour un compte professionnel
+        
+        for (Order o : orders) {
 
-    // ---------------------------------------------------------
-    // 5. SUPPRIMER automatiquement la Livraison si l’Order est supprimé
-    //    (appelé par le trigger Order BEFORE DELETE)
-    // ---------------------------------------------------------
-    public static void deleteLivraisonsByOrders(Set<Id> orderIds) {
+            Account account = accountsById.get(o.AccountId);
+            Integer totalOrderProducts = qtyByOrder.get(o.Id);
 
-        if (orderIds.isEmpty()) return;
+            Boolean isParticulier = false;
+            Boolean isProfessionnel = false;
 
-        // Appel au Selector (pas de SOQL ici)
-        List<Livraison__c> livs = LivraisonSelector.getByOrders(orderIds);
+            if (account != null) {
+                if (account.Customer_Type__c == 'Particulier') { isParticulier = true;}
+                if (account.Customer_Type__c == 'Professionnel') {isProfessionnel = true;}
+            }
+        
+            if (totalOrderProducts == null) {
+                totalOrderProducts = 0;
+            }
 
-        if (!livs.isEmpty()) {
-            delete livs;
+            if (totalOrderProducts < 3 && isParticulier && o.Status == 'Activated') {
+                o.addError('La commande doit contenir au moins 3 produits pour un compte particulier');
+            continue;
+            }
+
+            if (totalOrderProducts < 5 && isProfessionnel && o.Status == 'Activated') {
+                o.addError('La commande doit contenir au moins 5 produits pour un compte professionnel');
+            }
         }
     }
-}
+
+    public static void validateOrderDelete(List<Order> orders) {
+
+        if (orders == null || orders.isEmpty()) {
+            return;
+        }
+    
+        // 1. collecter les Ids des commandes qui ont déclencher le trigger et les Ids des livraisons qui leurs sont liées 
+        Set<Id> orderIds = new Set<Id>();
+        Set<Id> deliveryOrderOrderIds = new Set<Id>();
+        
+        for (Order o : orders) { 
+
+            orderIds.add(o.Id);
+        }
+
+
+        // 2. récupérer la liste des delivery orders liées à tous les orders avant suppression
+        List<Livraison__c> livs = new List<Livraison__c>();
+        livs = LivraisonSelector.getByOrders(orderIds);
+
+        for (Livraison__c liv : livs) {
+
+            if (liv.Order__c != null) {
+                deliveryOrderOrderIds.add(liv.Order__c);
+            }
+        }
+    
+        
+        for (Order o : orders) {
+            
+            if (deliveryOrderOrderIds.contains(o.Id)) {
+                o.addError('Impossible de supprimer une commande avec une livraison associée');
+            }
+        }
+    }   
+}        
+    
+   
