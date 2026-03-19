@@ -94,7 +94,7 @@ public with sharing class DeliveryOrderService {
     // 4. SUPPRIMER la Livraison liée à un Order (bouton UI)
     // ---------------------------------------------------------
     @AuraEnabled
-    public static void deleteDeliveryOrders(List<Id> orderIds) {
+    public static void deleteDeliveryOrdersByOrderIds(List<Id> orderIds) {
 
         //1. Récupérer les Delivery Orders par les Orders Ids
         List<Livraison__c> deliveryOrdersToBeDeleted = new List<Livraison__c>();
