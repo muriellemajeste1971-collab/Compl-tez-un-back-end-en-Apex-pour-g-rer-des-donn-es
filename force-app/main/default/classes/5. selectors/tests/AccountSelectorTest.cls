@@ -10,7 +10,7 @@ private class AccountSelectorTest {
 
         //WHEN
         Test.startTest();
-         Set<Id> accountIds = new Set<Id>{a[0].Id};
+         List<Id> accountIds = new List<Id>{a[0].Id};
          List<Account> result = AccountSelector.getAccountsByIds(accountIds);
         Test.stopTest();
 
@@ -29,7 +29,7 @@ private class AccountSelectorTest {
         List<Account> a = TestDataFactory.createAccounts(200, 'Professionnel', 'Luxembourg');
         
         // Build Set<Id>
-        Set<Id> accountIds = new Set<Id>();
+        List<Id> accountIds = new List<Id>();
         for (Account acc : a) {
         accountIds.add(acc.Id);
         }
@@ -56,7 +56,7 @@ private class AccountSelectorTest {
         List<Account> a = TestDataFactory.createAccounts(10, 'Professionnel', 'France');
         
         // Build Set<Id>
-        Set<Id> accountIds = new Set<Id>();
+        List<Id> accountIds = new List<Id>();
         for (Account acc : a) {
         accountIds.add(acc.Id);
         }
@@ -80,7 +80,7 @@ private class AccountSelectorTest {
     static void NegativebehaviorGetAccountsByIds() {
      
         // GIVEN
-         Set<Id> accountIds = new Set<Id>(); // Set vide
+         List<Id> accountIds = new List<Id>(); // Set vide
 
         // WHEN
         Test.startTest();
@@ -101,7 +101,7 @@ private class AccountSelectorTest {
         // WHEN
         Test.startTest();
         System.runAs(restrictedUser) {
-        List<Account> result = AccountSelector.getAccountsByIds(new Set<Id>{a[0].Id});
+        List<Account> result = AccountSelector.getAccountsByIds(new List<Id>{a[0].Id});
         Test.stopTest();
 
         // THEN

@@ -24,15 +24,21 @@ export default class TransporterList extends NavigationMixin(LightningElement) {
     
     hasLivraison = false;
 
-   connectedCallback() {
-    getLivraisonByOrder({ orderId: this.recordId })
+    connectedCallback() {
+    getLivraisonByOrder({ orderIds: [this.recordId] })
         .then(result => {
-            this.livraison = result;
-            this.hasLivraison = result != null;
-        });
-}
+            const livraisons = result[this.recordId];
 
- 
+            if (livraisons && livraisons.length > 0) {
+                this.livraison = livraisons[0];
+                this.hasLivraison = true;
+            } else {
+                this.livraison = null;
+                this.hasLivraison = false;
+            }
+            }     
+        );
+    }
 
     @wire(getTarifs, { orderId: '$recordId' }) 
     wiredTarifs({ data, error }) {
@@ -85,93 +91,110 @@ export default class TransporterList extends NavigationMixin(LightningElement) {
         }
         
     handleCreateLivraison() {
-        createLivraison({ orderId: this.recordId, selectedTarificationId: this.selectedTarificationId })
-            .then(result => {
-                this.livraison = { Id: result };
-                this.hasLivraison = true;
-                this.selectedTarificationId = null;
-                this.dispatchEvent(
-                    new ShowToastEvent({
-                        title: 'Succès',
-                        message: 'Livraison créée avec succès!',
-                        variant: 'success'
-                    })
-                );
-            })
-            .catch(error => {
-                this.dispatchEvent(
-                    new ShowToastEvent({
-                        title: 'Erreur',
-                        message: 'Erreur lors de la création de la livraison: ' + (error.body?.message || error.message),
-                        variant: 'error'
-                    })
-                );
-            });
-        }
+        createLivraison({
+            orderIds: [this.recordId],
+            selectedTarifIds: { [this.recordId]: this.selectedTarificationId }
+        })
+
+        .then(result => {
+            const livraisonId = result[this.recordId];
+
+            this.livraison = { Id: livraisonId };
+            this.hasLivraison = true;
+            this.selectedTarificationId = null;
+
+            this.dispatchEvent(
+                new ShowToastEvent({
+                    title: 'Succès',
+                    message: 'Livraison créée avec succès!',
+                    variant: 'success'
+                })
+            );
+        })
+
+        .catch(error => {
+            this.dispatchEvent(
+                new ShowToastEvent({
+                    title: 'Erreur',
+                    message: 'Erreur lors de la création de la livraison: ' + (error.body?.message || error.message),
+                    variant: 'error'
+                })
+            );
+        });
+    }
+
 
     handleUpdate() {
-    updateLivraison({
-        livraisonId: this.livraison.Id,
-        newTarificationId: this.selectedTarificationId
-    })
-    .then((newLivraisonId) => {
-        this.dispatchEvent(
-            new ShowToastEvent({
-                title: 'Succès',
-                message: 'Livraison mise à jour avec succès !',
-                variant: 'success'
-            })
-        );
+        updateLivraison({
+            deliveryOrderIds: [this.livraison.Id],
+            newTarifIds: { [this.livraison.Id]: this.selectedTarificationId }
+        })
+        .then(() => {
+            this.dispatchEvent(
+                new ShowToastEvent({
+                    title: 'Succès',
+                    message: 'Livraison mise à jour avec succès !',
+                    variant: 'success'
+                })
+            );
 
-        // Recharger la livraison avec le nouvel ID
-        return getLivraisonByOrder({ orderId: this.recordId });
-    })
-    .then(result => {
-        this.livraison = result;
-        this.selectedTarificationId = null;
-    })
-    .catch(error => {
-        this.dispatchEvent(
-            new ShowToastEvent({
-                title: 'Erreur',
-                message: 'Erreur lors de la mise à jour : ' + (error.body?.message || error.message),
-                variant: 'error'
-            })
-        );
-    });
-}
+            return getLivraisonByOrder({ orderIds: [this.recordId] });
+        })
+        .then(result => {
+            const livraisons = result[this.recordId];
+
+            if (livraisons && livraisons.length > 0) {
+                this.livraison = livraisons[0];
+            } else {
+                this.livraison = null;
+            }
+
+            this.selectedTarificationId = null;
+        })
+        .catch(error => {
+            this.dispatchEvent(
+                new ShowToastEvent({
+                    title: 'Erreur',
+                    message: 'Erreur lors de la mise à jour : ' + (error.body?.message || error.message),
+                    variant: 'error'
+                })
+            );
+        });
+    }
 
     
     handleDelete() {
-        deleteLivraison({ orderId: this.recordId })
-            .then(() => {
-                this.hasLivraison = false;
-                this.dispatchEvent(
-                    new ShowToastEvent({
-                        title: 'Succès',
-                        message: 'Livraison supprimée avec succès!',
-                        variant: 'success'
-                    })
-                );
-                 // Redirection vers la liste des Orders
-                this[NavigationMixin.Navigate]({
+    deleteLivraison({ orderIds: [this.recordId] }) //  tableau !
+
+        .then(() => {
+            this.hasLivraison = false;
+
+            this.dispatchEvent(
+                new ShowToastEvent({
+                    title: 'Succès',
+                    message: 'Livraison supprimée avec succès!',
+                    variant: 'success'
+                })
+            );
+
+            this[NavigationMixin.Navigate]({
                 type: 'standard__objectPage',
                 attributes: {
                     objectApiName: 'Order',
                     actionName: 'list'
                 }
             });
-            })
-            .catch(error => {
-                this.dispatchEvent(
-                    new ShowToastEvent({
-                        title: 'Erreur',
-                        message: 'Erreur lors de la suppression de la livraison: ' + (error.body?.message || error.message),
-                        variant: 'error'
-                    })
-                );
-            });
-    }
+        })
+        .catch(error => {
+            this.dispatchEvent(
+                new ShowToastEvent({
+                    title: 'Erreur',
+                    message: 'Erreur lors de la suppression de la livraison: ' + (error.body?.message || error.message),
+                    variant: 'error'
+                })
+            );
+        });
+}
 
 
 

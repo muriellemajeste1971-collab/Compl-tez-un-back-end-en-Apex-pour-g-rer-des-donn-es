@@ -70,26 +70,46 @@ public with sharing class DeliveryOrderService {
     @AuraEnabled
     public static List<Id> updateDeliveryOrders(List<Id> deliveryOrderIds, Map<Id, Id> newTarifIds) {
 
-        // 1. Récupérer les livraisons à mettre à jour
-        List<Livraison__c> deliveryOrders = DeliveryOrderSelector.getDeliveryOrdersByOrderIds(deliveryOrderIds);
+        // 1. récupérer les livraisons existantes
+        List<Livraison__c> oldDeliveryOrders = DeliveryOrderSelector.getDeliveryOrdersByIds(deliveryOrderIds);
 
-        // 2. Créer une liste pour collecter les  livraisons à mettre à jour
-        List<Livraison__c> deliveryOrdersToUpdate = new List<Livraison__c>();
+        // 2. préparer suppression + création
+        List<Livraison__c> toDelete = new List<Livraison__c>();
+        List<Livraison__c> toInsert = new List<Livraison__c>();
 
-            for (Livraison__c deliveryOrder : deliveryOrders) {
-                if (newTarifIds.containsKey(deliveryOrder.Id)) {
-                    deliveryOrder.Tarification__c = newTarifIds.get(deliveryOrder.Id);
-                    deliveryOrdersToUpdate.add(deliveryOrder);
+            for (Livraison__c oldDO : oldDeliveryOrders) {
+
+                if (newTarifIds.containsKey(oldDO.Id)) {
+
+                    // ✔️ suppression
+                    toDelete.add(oldDO);
+
+                    // ✔️ recréation avec nouvelle tarification
+                    Livraison__c newDO = new Livraison__c(
+                        Name = oldDO.Name,
+                        Order__c = oldDO.Order__c,
+                        Account__c = oldDO.Account__c,
+                        Tarification__c = newTarifIds.get(oldDO.Id),
+                        Statut__c = oldDO.Statut__c
+                    );
+
+                    toInsert.add(newDO);
                 }
             }
 
-        // 3. Bulk DML - Update Outside of the loop 
-        update deliveryOrdersToUpdate;
+            // 3. DML bulk
+            delete toDelete;
+            insert toInsert;
 
-        // 4. Retourner les Id mis à jour
-        return deliveryOrderIds;
+        // 4. retour des nouveaux Ids
+        List<Id> newIds = new List<Id>();
+            for (Livraison__c l : toInsert) {
+                newIds.add(l.Id);
+            }
+
+            return newIds;
     }
-
+    
     // ---------------------------------------------------------
     // 4. SUPPRIMER la Livraison liée à un Order (bouton UI)
     // ---------------------------------------------------------
