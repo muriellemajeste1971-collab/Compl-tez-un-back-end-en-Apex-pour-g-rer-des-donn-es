@@ -1,6 +1,6 @@
 import { LightningElement, api, wire } from 'lwc';
 import { ShowToastEvent } from 'lightning/platformShowToastEvent';
-import getTransporters from '@salesforce/apex/TransporterOrchestrator.getAllTransporters';
+import getTransporters from '@salesforce/apex/OrderTarifService.getOrderTarifs';
 import createLivraison from '@salesforce/apex/OrderService.createLivraison';
 import getLivraisonByOrder from '@salesforce/apex/OrderService.getLivraisonByOrder';
 import updateLivraison from '@salesforce/apex/OrderService.updateLivraison';

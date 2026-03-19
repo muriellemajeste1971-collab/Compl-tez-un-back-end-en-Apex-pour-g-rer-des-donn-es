@@ -1,0 +1,20 @@
+public with sharing class OrderTarifSelector {
+
+    public static List<Tarification__c> getOrderTarifs() {
+        
+        return [
+            SELECT  
+                Id,
+                Name,
+                Tarif_de_Livraison__c, 
+                D_lai_de_Livraison_jours__c,    
+                Zone_de_Livraison__c,   
+                Account_Type__c,
+                Transporteur__c,
+                Transporteur__r.Customer_Type__c,
+                Transporteur__r.Name,
+                IsDeleted      
+            FROM Tarification__c
+        ];
+    }
+}

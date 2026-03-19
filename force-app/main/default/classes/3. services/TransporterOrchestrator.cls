@@ -21,7 +21,7 @@ public with sharing class TransporterOrchestrator {
 
         // Le selector renvoie déjà la liste : fastest, cheapest, others
         List<Tarification__c> result =
-            TransporterSelector.getAll(orderId, pays, typeClient);
+            OrderTarifSelector.tarifs(orderId, pays, typeClient);
 
         return result;
     }

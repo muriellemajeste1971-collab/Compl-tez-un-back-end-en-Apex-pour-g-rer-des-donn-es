@@ -1,10 +1,10 @@
-public with sharing class OrderItemSelector {
+public with sharing class OrderItemAggregator {
 
-     public static Map<Id, Integer> TotalQuantityByOrder(Set<Id> orderIds) {
+    public static Map<Id, Decimal> TotalQuantityByOrder(Set<Id> orderIds) {
         
-     Map<Id, Integer> result = new Map<Id, Integer>();
+        Map<Id, Decimal> result = new Map<Id, Decimal>();
 
-        for (AggregateResult ar : [
+            for (AggregateResult ar : [
                 SELECT OrderId, SUM(Quantity) totalQty
                 FROM OrderItem
                 WHERE OrderId IN :orderIds
@@ -13,12 +13,10 @@ public with sharing class OrderItemSelector {
             {
             result.put(
                 (Id) ar.get('OrderId'),
-                (Integer) ar.get('totalQty')
+                (Decimal) ar.get('totalQty')
             );
             }
 
-    return result;
-
+            return result;
     }
-
 }

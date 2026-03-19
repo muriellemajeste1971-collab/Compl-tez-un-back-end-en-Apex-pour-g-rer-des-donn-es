@@ -48,16 +48,16 @@ public with sharing class OrderService {
         Map<Id, Account> accountsById = new Map<Id, Account>(accounts);
 
         // 3. récupérer les données sur le nombre total de produits pour les commandes qui ont déclencher le trigger
-        Map<Id, Integer> qtyByOrder = new Map<Id, Integer>();
-        qtyByOrder = OrderItemSelector.TotalQuantityByOrder(orderIds);
-
+        Map<Id, Decimal> qtyByOrder = new Map<Id, Decimal>();   
+        qtyByOrder = OrderItemAggregator.TotalQuantityByOrder(orderIds);
+   
         // 4. pour chaque commande qui a déclenché le trigger récupérer sur le compte le type de compte et le nombre total de produits
         // et appliquer les règles métiers minimum 3 produits pour un compte particulier et minimum 5 produits pour un compte professionnel
         
         for (Order o : orders) {
 
             Account account = accountsById.get(o.AccountId);
-            Integer totalOrderProducts = qtyByOrder.get(o.Id);
+            Decimal totalOrderProducts = qtyByOrder.get(o.Id);
 
             Boolean isParticulier = false;
             Boolean isProfessionnel = false;
