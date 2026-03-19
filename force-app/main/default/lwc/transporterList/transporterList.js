@@ -1,10 +1,10 @@
 import { LightningElement, api, wire } from 'lwc';
 import { ShowToastEvent } from 'lightning/platformShowToastEvent';
-import getTransporters from '@salesforce/apex/OrderTarifService.getOrderTarifs';
-import createLivraison from '@salesforce/apex/OrderService.createLivraison';
-import getLivraisonByOrder from '@salesforce/apex/OrderService.getLivraisonByOrder';
-import updateLivraison from '@salesforce/apex/OrderService.updateLivraison';
-import deleteLivraison from '@salesforce/apex/OrderService.deleteLivraison';
+import getTarifs from '@ialesforce/apex/OrderTarifService.getOrderTarifs';
+import createLivraison from '@salesforce/apex/DeliveryOrderService.createLivraison';
+import getLivraisonByOrder from '@salesforce/apex/DeliveryOrderService.getLivraisonByOrder';
+import updateLivraison from '@salesforce/apex/DeliveryOrderService.updateLivraison';
+import deleteLivraison from '@salesforce/apex/DeliveryOrderService.deleteLivraison';
 import { refreshApex } from '@salesforce/apex';
 import { getRecord } from 'lightning/uiRecordApi';
 import PAYS_FIELD from '@salesforce/schema/Order.Pays__c';
@@ -34,7 +34,7 @@ export default class TransporterList extends NavigationMixin(LightningElement) {
 
  
 
-    @wire(getTransporters, { orderId: '$recordId' }) 
+    @wire(getTarifs, { orderId: '$recordId' }) 
     wiredTarifs({ data, error }) {
         if (data && Array.isArray(data)) {
 

@@ -6,8 +6,9 @@ public with sharing class DeliveryOrderService {
     public static Map<Id, Id> createDeliveryOrdersByOrderIds(List<Id> orderIds, Map<Id, Id> selectedTarifIds) {
 
         // 1. Déclaration explicite de la liste d'Orders
+
         List<Order> orders = new List<Order>();
-        orders = OrderSelector.getOrdersByIds(orderIds);
+        orders = OrderSelector.getOrdersByOrderIds(orderIds);
 
         // 2. Déclaration explicite de la liste de Livraisons à insérer
         List<Livraison__c> newDeliverOrders = new List<Livraison__c>();
@@ -46,7 +47,7 @@ public with sharing class DeliveryOrderService {
     // 2. RECUPERER la Livraison liée à un Order
     // ---------------------------------------------------------
     @AuraEnabled(cacheable=true)
-    public static Map<Id, List<Livraison__c>> getDeliveryOrderByOrderIds(Set<Id> orderIds) {
+    public static Map<Id, List<Livraison__c>> getDeliveryOrderByOrderIds(List<Id> orderIds) {
        
         //1. Récupérer les Delivery Orders par les Orders Ids
          List<Livraison__c> deliveryOrders = new List<Livraison__c>();
@@ -57,9 +58,9 @@ public with sharing class DeliveryOrderService {
     
             for (Livraison__c deliveryOrder : deliveryOrders) {
                 if (!result.containsKey(deliveryOrder.Order__c)) {
-                    result.put(deliveryO.Order__c, new List<Livraison__c>());
+                    result.put(deliveryOrder.Order__c, new List<Livraison__c>());
                 }
-                    result.get(deliverryO.Order__c).add(deliveryOrder);
+                    result.get(deliveryOrder.Order__c).add(deliveryOrder);
             }
 
             return result;
@@ -67,12 +68,12 @@ public with sharing class DeliveryOrderService {
 
     // 3. Mettre à jour le Delivery Order lié à un Order
     @AuraEnabled
-    public static Set<Id> updateDeliveryOrders(Set<Id> deliveryOrderIds, Map<Id, Id> newTarifIds) {
+    public static List<Id> updateDeliveryOrders(List<Id> deliveryOrderIds, Map<Id, Id> newTarifIds) {
 
         // 1. Récupérer les livraisons à mettre à jour
-        List<Livraison__c> deliveryOrders = DeliveryOrderSelector.getDeliveryOrdersByIds(deliveryOrderIds);
+        List<Livraison__c> deliveryOrders = DeliveryOrderSelector.getDeliveryOrdersByOrderIds(deliveryOrderIds);
 
-        // 2. Créer une liste pour collecter les livraisons à mettre à jour
+        // 2. Créer une liste pour collecter les  livraisons à mettre à jour
         List<Livraison__c> deliveryOrdersToUpdate = new List<Livraison__c>();
 
             for (Livraison__c deliveryOrder : deliveryOrders) {
@@ -93,7 +94,7 @@ public with sharing class DeliveryOrderService {
     // 4. SUPPRIMER la Livraison liée à un Order (bouton UI)
     // ---------------------------------------------------------
     @AuraEnabled
-    public static void deleteDeliveryOrders(Set<Id> orderIds) {
+    public static void deleteDeliveryOrders(List<Id> orderIds) {
 
         //1. Récupérer les Delivery Orders par les Orders Ids
         List<Livraison__c> deliveryOrdersToBeDeleted = new List<Livraison__c>();

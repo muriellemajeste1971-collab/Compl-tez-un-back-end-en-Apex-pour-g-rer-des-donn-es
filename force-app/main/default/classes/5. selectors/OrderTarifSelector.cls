@@ -11,8 +11,6 @@ public with sharing class OrderTarifSelector {
                 Zone_de_Livraison__c,   
                 Account_Type__c,
                 Transporteur__c,
-                Transporteur__r.Customer_Type__c,
-                Transporteur__r.Name,
                 IsDeleted      
             FROM Tarification__c
         ];

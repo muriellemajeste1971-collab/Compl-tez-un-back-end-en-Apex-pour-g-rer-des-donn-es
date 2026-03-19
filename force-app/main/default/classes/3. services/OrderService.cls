@@ -33,7 +33,7 @@ public with sharing class OrderService {
 
         // 1. collecter les Ids des commandes qui ont déclencher le trigger et les Ids du compte auxquel elles sont rattachés
         Set<Id> orderIds = new Set<Id>();
-        Set<Id> accountIds = new Set<Id>();
+        List<Id> accountIds = new List<Id>();
         
         for (Order o : orders) {
                 orderIds.add(o.Id);
@@ -54,32 +54,32 @@ public with sharing class OrderService {
         // 4. pour chaque commande qui a déclenché le trigger récupérer sur le compte le type de compte et le nombre total de produits
         // et appliquer les règles métiers minimum 3 produits pour un compte particulier et minimum 5 produits pour un compte professionnel
         
-        for (Order o : orders) {
+            for (Order o : orders) {
 
-            Account account = accountsById.get(o.AccountId);
-            Decimal totalOrderProducts = qtyByOrder.get(o.Id);
+                Account account = accountsById.get(o.AccountId);
+                Decimal totalOrderProducts = qtyByOrder.get(o.Id);
 
-            Boolean isParticulier = false;
-            Boolean isProfessionnel = false;
+                Boolean isParticulier = false;
+                Boolean isProfessionnel = false;
 
-            if (account != null) {
+                if (account != null) {
                 if (account.Customer_Type__c == 'Particulier') { isParticulier = true;}
                 if (account.Customer_Type__c == 'Professionnel') {isProfessionnel = true;}
-            }
+                }
         
-            if (totalOrderProducts == null) {
-                totalOrderProducts = 0;
-            }
+                if (totalOrderProducts == null) { 
+                    totalOrderProducts = 0;
+                }
 
-            if (totalOrderProducts < 3 && isParticulier && o.Status == 'Activated') {
-                o.addError('La commande doit contenir au moins 3 produits pour un compte particulier');
-            continue;
-            }
+                if (totalOrderProducts < 3 && isParticulier && o.Status == 'Activated') {
+                    o.addError('La commande doit contenir au moins 3 produits pour un compte particulier');
+                    continue;
+                }
 
-            if (totalOrderProducts < 5 && isProfessionnel && o.Status == 'Activated') {
-                o.addError('La commande doit contenir au moins 5 produits pour un compte professionnel');
+                if (totalOrderProducts < 5 && isProfessionnel && o.Status == 'Activated') {
+                    o.addError('La commande doit contenir au moins 5 produits pour un compte professionnel');
+                }
             }
-        }
     }
 
     public static void validateOrderDelete(List<Order> orders) {
