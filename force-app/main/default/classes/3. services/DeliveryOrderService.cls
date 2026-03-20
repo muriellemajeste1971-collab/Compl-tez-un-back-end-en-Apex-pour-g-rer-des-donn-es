@@ -110,18 +110,6 @@ public with sharing class DeliveryOrderService {
             return newIds;
     }
     
-    // ---------------------------------------------------------
-    // 4. SUPPRIMER la Livraison liée à un Order (bouton UI)
-    // ---------------------------------------------------------
-    @AuraEnabled
-    public static void deleteDeliveryOrdersByOrderIds(List<Id> orderIds) {
 
-        //1. Récupérer les Delivery Orders par les Orders Ids
-        List<Livraison__c> deliveryOrdersToBeDeleted = new List<Livraison__c>();
-            deliveryOrdersToBeDeleted = DeliveryOrderSelector.getDeliveryOrdersByOrderIds(orderIds);
-
-        // 2. Bulk DML - Delete : Supprimer les Delivery Orders de la liste deliveryOrdersToBeDeleted 
-        delete deliveryOrdersToBeDeleted;
-    }
 
 }

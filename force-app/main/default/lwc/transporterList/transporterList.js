@@ -162,40 +162,6 @@ export default class TransporterList extends NavigationMixin(LightningElement) {
         });
     }
 
-    
-    handleDelete() {
-    deleteLivraison({ orderIds: [this.recordId] }) //  tableau !
-
-        .then(() => {
-            this.hasLivraison = false;
-
-            this.dispatchEvent(
-                new ShowToastEvent({
-                    title: 'Succès',
-                    message: 'Livraison supprimée avec succès!',
-                    variant: 'success'
-                })
-            );
-
-            this[NavigationMixin.Navigate]({
-                type: 'standard__objectPage',
-                attributes: {
-                    objectApiName: 'Order',
-                    actionName: 'list'
-                }
-            });
-        })
-        .catch(error => {
-            this.dispatchEvent(
-                new ShowToastEvent({
-                    title: 'Erreur',
-                    message: 'Erreur lors de la suppression de la livraison: ' + (error.body?.message || error.message),
-                    variant: 'error'
-                })
-            );
-        });
-}
-
 
 
   

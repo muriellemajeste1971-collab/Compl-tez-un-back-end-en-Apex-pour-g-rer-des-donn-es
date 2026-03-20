@@ -1,14 +1,5 @@
 public with sharing class OrderService {
 
-    public static void validateOrderBeforeInsert(List<Order> newList) { 
-
-        if (newList == null || newList.isEmpty()) {
-            return;
-        }
-
-        validateOrder(newList);
-    }
-
     public static void validateOrderBeforeUpdate(Map<Id, Order> oldMap, Map<Id, Order> newMap) {
         
         if (newMap == null || newMap.isEmpty()) {
@@ -87,36 +78,33 @@ public with sharing class OrderService {
         if (orders == null || orders.isEmpty()) {
             return;
         }
-    
-        // 1. collecter les Ids des commandes qui ont déclencher le trigger et les Ids des livraisons qui leurs sont liées 
-        Set<Id> orderIds = new Set<Id>();
-        Set<Id> deliveryOrderOrderIds = new Set<Id>();
-        
-        for (Order o : orders) { 
 
-            orderIds.add(o.Id);
-        }
+        // 1. collecter les Ids des commandes qui ont déclenché le trigger
+        List<Id> orderIds = new List<Id>();
+        List<Id> deliveryOrderOrderIds = new List<Id>();
 
+            for (Order o : orders) {
+                orderIds.add(o.Id);
+            }
 
         // 2. récupérer la liste des delivery orders liées à tous les orders avant suppression
-        List<Livraison__c> livs = new List<Livraison__c>();
-        livs = LivraisonSelector.getByOrders(orderIds);
-
-        for (Livraison__c liv : livs) {
-
-            if (liv.Order__c != null) {
-                deliveryOrderOrderIds.add(liv.Order__c);
-            }
-        }
-    
+        List<Livraison__c> deliveryOrdersToBeDeleted = new List<Livraison__c>();
+        deliveryOrdersToBeDeleted = DeliveryOrderSelector.getDeliveryOrdersByOrderIds(orderIds);
         
-        for (Order o : orders) {
-            
-            if (deliveryOrderOrderIds.contains(o.Id)) {
-                o.addError('Impossible de supprimer une commande avec une livraison associée');
+        // 3. stocker les Order__c des livraisons trouvées
+            for (Livraison__c deliveryOrder : deliveryOrdersToBeDeleted) {
+                if (deliveryOrder.Order__c != null) {
+                        deliveryOrderOrderIds.add(deliveryOrder.Order__c);
+                }
             }
+
+        // 4. bloquer uniquement les orders qui ont une livraison liée
+            for (Order o : orders) {
+                if (deliveryOrderOrderIds.contains(o.Id)) {
+                     o.addError('Impossible de supprimer une commande avec une livraison associée');
+                }
         }
-    }   
+    }
 }        
     
    
