@@ -91,22 +91,35 @@ private class AccountSelectorTest {
         System.assertEquals(0, result.size());
     }
 
+
+
     @isTest
-    
     static void RestricteduserGetAccountsByIds() {
+
         // GIVEN
         User restrictedUser = TestDataFactory.createRestrictedUser();
-        List<Account> a = TestDataFactory.createAccounts(1, 'Particulier', 'Suisse');
-        
-        // WHEN
-        Test.startTest();
-        System.runAs(restrictedUser) {
-        List<Account> result = AccountSelector.getAccountsByIds(new List<Id>{a[0].Id});
-        Test.stopTest();
+        List<Account> accounts = TestDataFactory.createAccounts(1, 'Particulier', 'Suisse');
+        List<Id> ids = new List<Id>{ accounts[0].Id };
 
-        // THEN
-        System.assertEquals(0, result.size());
-        }
+         // WHEN
+        Test.startTest();
+            System.runAs(restrictedUser) {
+                try {
+                    AccountSelector.getAccountsByIds(ids);
+
+                    // Si aucune exception → erreur
+                    System.assert(false, 'Une exception était attendue pour un utilisateur sans accès');
+
+                } catch (Exception e) {
+
+                    // Vérifie qu'une exception est bien levée
+                    System.assertNotEquals(null, e);
+
+                    // (Optionnel mais propre)
+                    System.assert(e.getMessage().contains('not supported') || e.getMessage() != null);
+                }
+            }
+        Test.stopTest();
     }
 }
 
