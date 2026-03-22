@@ -6,18 +6,22 @@ private class AccountSelectorTest {
 
         // GIVEN
         List<Account> a = TestDataFactory.createAccounts(1, 'Particulier', 'France');
-   
+        
+            // Build List<Id>
+            List<Id> accountIds = new List<Id>();
+                for (Account acc : a) {     
+                    accountIds.add(acc.Id);
+                }
 
         //WHEN
         Test.startTest();
-         List<Id> accountIds = new List<Id>{a[0].Id};
          List<Account> result = AccountSelector.getAccountsByIds(accountIds);
         Test.stopTest();
 
         // THEN
-        System.Assert.areEqual('Account 1', a[0].Name);
-        System.Assert.areEqual('Particulier', a[0].Customer_Type__c);
-        System.Assert.areEqual('France', a[0].ShippingCountry);
+        System.Assert.areEqual('Account 1', result[0].Name);
+        System.Assert.areEqual('Particulier', result[0].Customer_Type__c);
+        System.Assert.areEqual('FR', result[0].ShippingCountry);
         System.Assert.areEqual(1, result.size());
     
     }
@@ -28,11 +32,11 @@ private class AccountSelectorTest {
         // GIVEN
         List<Account> a = TestDataFactory.createAccounts(200, 'Professionnel', 'Luxembourg');
         
-        // Build Set<Id>
-        List<Id> accountIds = new List<Id>();
-        for (Account acc : a) {
-        accountIds.add(acc.Id);
-        }
+            // Build List<Id>
+            List<Id> accountIds = new List<Id>();
+                for (Account acc : a) {
+                    accountIds.add(acc.Id);
+                }
        
        // WHEN
         Test.startTest();
@@ -40,12 +44,12 @@ private class AccountSelectorTest {
         Test.stopTest();
 
         // THEN
-        System.Assert.areEqual('Account 1', a[0].Name);
-        System.Assert.areEqual('Professionnel', a[0].Customer_Type__c);
-        System.Assert.areEqual('Luxembourg', a[0].ShippingCountry);
-        System.Assert.areEqual('Account 200', a[199].Name);
-        System.Assert.areEqual('Professionnel', a[199].Customer_Type__c);
-        System.Assert.areEqual('Luxembourg', a[199].ShippingCountry);
+        System.Assert.areEqual('Account 1', result[0].Name);
+        System.Assert.areEqual('Professionnel', result[0].Customer_Type__c);
+        System.Assert.areEqual('LU', result[0].ShippingCountry);
+        System.Assert.areEqual('Account 200', result[199].Name);
+        System.Assert.areEqual('Professionnel', result[199].Customer_Type__c);
+        System.Assert.areEqual('LU', result[199].ShippingCountry);
         System.Assert.areEqual(200, result.size());
     }
 
@@ -55,11 +59,11 @@ private class AccountSelectorTest {
         // GIVEN
         List<Account> a = TestDataFactory.createAccounts(10, 'Professionnel', 'France');
         
-        // Build Set<Id>
-        List<Id> accountIds = new List<Id>();
-        for (Account acc : a) {
-        accountIds.add(acc.Id);
-        }
+            // Build List<Id>
+            List<Id> accountIds = new List<Id>();
+                for (Account acc : a) {
+                    accountIds.add(acc.Id);
+                }
        
        // WHEN
         Test.startTest();
@@ -67,12 +71,12 @@ private class AccountSelectorTest {
         Test.stopTest();
 
         // THEN
-        System.Assert.areEqual('Account 1', a[0].Name);
-        System.Assert.areEqual('Professionnel', a[0].Customer_Type__c);
-        System.Assert.areEqual('France', a[0].ShippingCountry);
-        System.Assert.areEqual('Account 10', a[9].Name);
-        System.Assert.areEqual('Professionnel', a[9].Customer_Type__c);
-        System.Assert.areEqual('France', a[9].ShippingCountry);
+        System.Assert.areEqual('Account 1', result[0].Name);
+        System.Assert.areEqual('Professionnel', result[0].Customer_Type__c);
+        System.Assert.areEqual('FR', result[0].ShippingCountry);
+        System.Assert.areEqual('Account 10', result[9].Name);
+        System.Assert.areEqual('Professionnel', result[9].Customer_Type__c);
+        System.Assert.areEqual('FR', result[9].ShippingCountry);
         System.Assert.areEqual(10, result.size());
     }
 
@@ -80,7 +84,7 @@ private class AccountSelectorTest {
     static void NegativebehaviorGetAccountsByIds() {
      
         // GIVEN
-         List<Id> accountIds = new List<Id>(); // Set vide
+         List<Id> accountIds = new List<Id>(); // List<Id>.size = 0 vide
 
         // WHEN
         Test.startTest();
@@ -98,14 +102,19 @@ private class AccountSelectorTest {
 
         // GIVEN
         User restrictedUser = TestDataFactory.createRestrictedUser();
-        List<Account> accounts = TestDataFactory.createAccounts(1, 'Particulier', 'Suisse');
-        List<Id> ids = new List<Id>{ accounts[0].Id };
+        List<Account> a = TestDataFactory.createAccounts(1, 'Particulier', 'Suisse');
+        
+            // Build List<Id>
+            List<Id> accountIds = new List<Id>();
+                for (Account acc : a) {
+                    accountIds.add(acc.Id);
+                }
 
          // WHEN
         Test.startTest();
             System.runAs(restrictedUser) {
                 try {
-                    AccountSelector.getAccountsByIds(ids);
+                    AccountSelector.getAccountsByIds(accountIds);
 
                     // Si aucune exception → erreur
                     System.assert(false, 'Une exception était attendue pour un utilisateur sans accès');

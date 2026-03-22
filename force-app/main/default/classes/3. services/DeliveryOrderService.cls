@@ -3,7 +3,15 @@ public with sharing class DeliveryOrderService {
     // 1. CREER une Livraison pour un Order
     // ---------------------------------------------------------
     @AuraEnabled
-    public static Map<Id, Id> createDeliveryOrdersByOrderIds(List<Id> orderIds, Map<Id, Id> selectedTarifIds) {
+    public static Map<Id, Id> createDeliveryOrdersByOrderIds(List<Id> orderIds, Map<Id, Id> selectedTarifIds ) {
+
+        // Validate parameters
+        if (orderIds == null || orderIds.isEmpty()) {
+            throw new DeliveryOrderServiceException('Delivery Order not specified.');
+        }
+        if (selectedTarifIds == null || selectedTarifIds.isEmpty()) {
+            throw new DeliveryOrderServiceException('Selected Tarif not specified.');
+        }
 
         // 1. Déclaration explicite de la liste d'Orders
 

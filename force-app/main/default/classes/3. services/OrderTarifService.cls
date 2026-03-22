@@ -8,6 +8,11 @@ public with sharing class OrderTarifService {
     @AuraEnabled(cacheable=true)
     public static List<Tarification__c> getOrderTarifs(Id orderId) {
 
+        //validate parameter
+        if (orderId == null) {
+            throw new OrderTarifServiceException('Order Id not specified.');
+        }
+
         Map<Id, List<Tarification__c>> resultMap =
             getOrderTarifsByOrderIds(new Set<Id>{ orderId });
 

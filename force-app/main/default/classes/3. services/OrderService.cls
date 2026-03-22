@@ -2,8 +2,12 @@ public with sharing class OrderService {
 
     public static void validateOrderBeforeUpdate(Map<Id, Order> oldMap, Map<Id, Order> newMap) {
         
+        // Validate parameters
+        if (oldMap == null || oldMap.isEmpty()) {
+            throw new OrderServiceException('Old Order not specified.');
+        }
         if (newMap == null || newMap.isEmpty()) {
-            return;
+            throw new OrderServiceException('New Order not specified.');
         }
 
         // Convert the values (which return a List<Order>) explicitly to List<Order> for clarity
