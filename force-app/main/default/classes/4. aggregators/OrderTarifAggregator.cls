@@ -9,7 +9,7 @@ public with sharing class OrderTarifAggregator {
 
         Map<Id, List<Tarification__c>> result = new Map<Id, List<Tarification__c>>();
 
-        for (Order o : OrderSelector.getOrdersByOrderIds(new List<Id>(orderIds))) {
+        for (Order o : OrderSelector.selectByIds(new List<Id>(orderIds))) {
 
             // 1. Récupérer les tarifs filtrés et triés
             List<Tarification__c> tarifs = getTarifs(o.Pays__c, o.Account_Type__c);

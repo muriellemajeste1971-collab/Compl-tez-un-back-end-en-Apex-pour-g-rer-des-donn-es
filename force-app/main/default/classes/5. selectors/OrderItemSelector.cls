@@ -1,6 +1,6 @@
 public with sharing class OrderItemSelector {
    
-   public static List<OrderItem> getOrderItemByOrdersIds(List<Id> orderIds) {
+   public static List<OrderItem> selectByOrdersIds(List<Id> orderIds) {
         return [
             SELECT Id, OrderId, Quantity
             FROM OrderItem

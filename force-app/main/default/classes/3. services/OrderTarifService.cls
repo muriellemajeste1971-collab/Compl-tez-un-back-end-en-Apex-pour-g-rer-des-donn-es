@@ -6,7 +6,7 @@ public with sharing class OrderTarifService {
      * ============================================================
      */
     @AuraEnabled(cacheable=true)
-    public static List<Tarification__c> getOrderTarifs(Id orderId) {
+    public static List<Tarification__c> getByOrderIds(Id orderId) {
 
         //validate parameter
         if (orderId == null) {
@@ -14,7 +14,7 @@ public with sharing class OrderTarifService {
         }
 
         Map<Id, List<Tarification__c>> resultMap =
-            getOrderTarifsByOrderIds(new Set<Id>{ orderId });
+            OrderTarifAggregator.getOrderTarifsByOrderIds(new Set<Id>{ orderId });
 
         return resultMap.get(orderId);
     }
@@ -24,7 +24,7 @@ public with sharing class OrderTarifService {
      *  MÉTHODE BULK (pour tests et logique interne)
      * ============================================================
      */
-    public static Map<Id, List<Tarification__c>> getOrderTarifsByOrderIds(Set<Id> orderIds) {
+    public static Map<Id, List<Tarification__c>> getByOrderIds(Set<Id> orderIds) {
 
         return OrderTarifAggregator.getOrderTarifsByOrderIds(orderIds);
     }

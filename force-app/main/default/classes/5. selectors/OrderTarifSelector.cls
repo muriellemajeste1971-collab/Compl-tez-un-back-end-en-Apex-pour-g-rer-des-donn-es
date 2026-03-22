@@ -1,6 +1,6 @@
 public with sharing class OrderTarifSelector {
 
-    public static List<Tarification__c> getOrderTarifs() {
+    public static List<Tarification__c> selectByTarif() {
         
         return [
             SELECT  

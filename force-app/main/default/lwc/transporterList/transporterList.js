@@ -1,10 +1,10 @@
 import { LightningElement, api, wire } from 'lwc';
 import { ShowToastEvent } from 'lightning/platformShowToastEvent';
 
-import getTarifs from '@salesforce/apex/OrderTarifService.getOrderTarifs';
-import createLivraison from '@salesforce/apex/DeliveryOrderService.createDeliveryOrdersByOrderIds';
-import getLivraisonByOrder from '@salesforce/apex/DeliveryOrderService.getDeliveryOrderByOrderIds';
-import updateLivraison from '@salesforce/apex/DeliveryOrderService.updateDeliveryOrders';
+import getTarifs from '@salesforce/apex/OrderTarifService.getByOrderIds';
+import createLivraison from '@salesforce/apex/DeliveryOrderService.createByOrderIds';
+import getLivraisonByOrder from '@salesforce/apex/DeliveryOrderService.getByOrderIds';
+import updateLivraison from '@salesforce/apex/DeliveryOrderService.updateByIds';
 
 import { refreshApex } from '@salesforce/apex';
 import { getRecord } from 'lightning/uiRecordApi';

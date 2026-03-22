@@ -2,14 +2,14 @@
     <div class="slds-text-align_right slds-m-top_medium"> 
     <template if:false={hasLivraison}>
         <lightning-button 
-                            label="Nouveau" 
+                            label="New" 
                             variant="neutral"
                             onclick={handleCreateLivraison}>
         </lightning-button>
    </template>
     <template if:true={hasLivraison}>
         <lightning-button 
-                            label="Nouveau Tarif Transporteur" 
+                            label="Update" 
                             variant="neutral"
                             onclick={handleUpdate}>
         </lightning-button>

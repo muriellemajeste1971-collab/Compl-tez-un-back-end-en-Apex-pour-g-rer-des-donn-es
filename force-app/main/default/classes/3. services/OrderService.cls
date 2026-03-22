@@ -1,30 +1,32 @@
 public with sharing class OrderService {
 
-    public static void validateOrderBeforeUpdate(Map<Id, Order> oldMap, Map<Id, Order> newMap) {
+    public static void validateBeforeUpdate(Map<Id, Order> oldMap, Map<Id, Order> newMap) {
         
-        // Validate parameters
-        if (oldMap == null || oldMap.isEmpty()) {
-            throw new OrderServiceException('Old Order not specified.');
-        }
-        if (newMap == null || newMap.isEmpty()) {
-            throw new OrderServiceException('New Order not specified.');
-        }
+            // Validate parameters
+
+            if (oldMap == null || oldMap.isEmpty()) {
+                throw new OrderServiceException('Old Order not specified.');
+            }
+
+            if (newMap == null || newMap.isEmpty()) {
+                throw new OrderServiceException('New Order not specified.');
+            }
 
         // Convert the values (which return a List<Order>) explicitly to List<Order> for clarity
         List<Order> updatedOrders = new List<Order>(newMap.values());
-        validateOrder(updatedOrders);
+            validateUpdate(updatedOrders);
     }
 
-    public static void validateOrderBeforeDelete(List<Order> oldList) {
+    public static void validateBeforeDelete(List<Order> oldList) {
         
         if (oldList == null || oldList.isEmpty()) {
             return;
         }
 
-        validateOrderDelete(oldList);
+        validateDelete(oldList);
     }
     
-    private static void validateOrder(List<Order> orders) {
+    private static void validateUpdate(List<Order> orders) {
 
         // 1. collecter les Ids des commandes qui ont déclencher le trigger et les Ids du compte auxquel elles sont rattachés
         Set<Id> orderIds = new Set<Id>();
@@ -39,7 +41,7 @@ public with sharing class OrderService {
 
        // 2. récupérer les données sur les comptes associés aux Ids des commandes qui ont déclencher le trigger
         List<Account> accounts = new List<Account>();
-        accounts = AccountSelector.getAccountsByIds(accountIds);
+        accounts = AccountSelector.selectByIds(accountIds);
         Map<Id, Account> accountsById = new Map<Id, Account>(accounts);
 
         // 3. récupérer les données sur le nombre total de produits pour les commandes qui ont déclencher le trigger
@@ -77,7 +79,7 @@ public with sharing class OrderService {
             }
     }
 
-    public static void validateOrderDelete(List<Order> orders) {
+    public static void validateDelete(List<Order> orders) {
 
         if (orders == null || orders.isEmpty()) {
             return;
@@ -93,7 +95,7 @@ public with sharing class OrderService {
 
         // 2. récupérer la liste des delivery orders liées à tous les orders avant suppression
         List<Livraison__c> deliveryOrdersToBeDeleted = new List<Livraison__c>();
-        deliveryOrdersToBeDeleted = DeliveryOrderSelector.getDeliveryOrdersByOrderIds(orderIds);
+        deliveryOrdersToBeDeleted = DeliveryOrderSelector.selectByOrderIds(orderIds);
         
         // 3. stocker les Order__c des livraisons trouvées
             for (Livraison__c deliveryOrder : deliveryOrdersToBeDeleted) {
