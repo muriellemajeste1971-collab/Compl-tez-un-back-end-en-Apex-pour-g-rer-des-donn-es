@@ -3,7 +3,7 @@ public with sharing class AccountTriggerHandler {
     public static void run() {
 
         if(Trigger.isBefore && Trigger.isInsert) {
-            AccountDomain.validateBeforeInsert(List<Account> Trigger.new);
+            AccountDomain.validateBeforeInsert(Trigger.new);
         }
 
         if(Trigger.isBefore && Trigger.isUpdate) {

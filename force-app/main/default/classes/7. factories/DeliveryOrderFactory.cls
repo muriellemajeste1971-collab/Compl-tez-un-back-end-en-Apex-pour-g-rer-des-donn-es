@@ -6,6 +6,12 @@ public with sharing class DeliveryOrderFactory {
 
         for (Order o : orders) {
 
+            if (!selectedTarifIds.containsKey(o.Id)) {
+                throw new AuraHandledException(
+                    'Aucun tarif sélectionné pour la commande ' + o.Id
+                );
+            }
+
             Id tarifId = selectedTarifIds.get(o.Id);
 
             Livraison__c newDeliveryOrder = new Livraison__c(

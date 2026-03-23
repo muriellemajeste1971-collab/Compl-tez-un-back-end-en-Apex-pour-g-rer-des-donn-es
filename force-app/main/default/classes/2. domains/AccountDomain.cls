@@ -1,6 +1,6 @@
 public with sharing class AccountDomain {
 
-    public static void validateAccountBeforeInsert(List <Account> newList) { 
+    public static void validateBeforeInsert(List <Account> newList) { 
 
         for (Account accs : newList) {
             validateShippingCountry(accs);
@@ -8,7 +8,7 @@ public with sharing class AccountDomain {
 
     }
 
-    public static void validateAccountBeforeUpdate(Map<Id, Account> oldMap, Map<Id, Account> newMap) {
+    public static void validateBeforeUpdate(Map<Id, Account> oldMap, Map<Id, Account> newMap) {
         
         for (Account accs : newMap.values()) {
             validateShippingCountry(accs);

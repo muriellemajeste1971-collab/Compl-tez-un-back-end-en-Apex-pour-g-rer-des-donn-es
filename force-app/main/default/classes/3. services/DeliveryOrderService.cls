@@ -56,49 +56,42 @@ public with sharing class DeliveryOrderService {
         }
 
     // 3. Mettre à jour le Delivery Order lié à un Order
-    @AuraEnabled
-    public static List<Id> updateByIds(List<Id> deliveryOrderIds, Map<Id, Id> newTarifIds) {
+   
+   @AuraEnabled
+    public static Map<Id, Id> updateByIds(List<Id> deliveryOrderIds, Map<Id, Id> newTarifIds) {
 
-        // 1. récupérer les livraisons existantes
-        List<Livraison__c> oldDeliveryOrders = DeliveryOrderSelector.selectByIds(deliveryOrderIds);
+        // 1. Récupérer les anciennes livraisons
+        List<Livraison__c> deliveryOrders = DeliveryOrderSelector.selectByIds(deliveryOrderIds);
 
-        // 2. préparer suppression + création
-        List<Livraison__c> toDelete = new List<Livraison__c>();
-        List<Livraison__c> toInsert = new List<Livraison__c>();
+        // 2. Construire la Map attendue par createByOrderIds : Map<OrderId, TarifId>
+        Map<Id, Id> selectedTarifIds = new Map<Id, Id>();
+        List<Id> orderIds = new List<Id>();
 
-            for (Livraison__c oldDO : oldDeliveryOrders) {
+        for (Livraison__c oldDO : deliveryOrders) {
 
-                if (newTarifIds.containsKey(oldDO.Id)) {
-
-                    // ✔️ suppression
-                    toDelete.add(oldDO);
-
-                    // ✔️ recréation avec nouvelle tarification
-                    Livraison__c newDO = new Livraison__c(
-                        Name = oldDO.Name,
-                        Order__c = oldDO.Order__c,
-                        Account__c = oldDO.Account__c,
-                        Tarification__c = newTarifIds.get(oldDO.Id),
-                        Statut__c = oldDO.Statut__c
-                    );
-
-                    toInsert.add(newDO);
-                }
+            // Le LWC envoie DeliveryOrderId → TarifId
+            if (!newTarifIds.containsKey(oldDO.Id)) {
+                throw new AuraHandledException(
+                    'Aucun tarif sélectionné pour la livraison ' + oldDO.Id
+                );
             }
 
-            // 3. DML bulk
-            delete toDelete;
-            insert toInsert;
+            // Transformation en OrderId → TarifId
+            selectedTarifIds.put(oldDO.Order__c, newTarifIds.get(oldDO.Id));
 
-        // 4. retour des nouveaux Ids
-        List<Id> newIds = new List<Id>();
-            for (Livraison__c l : toInsert) {
-                newIds.add(l.Id);
-            }
+            orderIds.add(oldDO.Order__c);
+        }
 
-            return newIds;
+        // 3. Utiliser la méthode existante pour créer les nouvelles livraisons
+        Map<Id, Id> newDeliveryOrderIdsByOrderId =
+            DeliveryOrderService.createByOrderIds(orderIds, selectedTarifIds);
+
+        // 4. Supprimer les anciennes livraisons
+        delete deliveryOrders;
+
+        // 5. Retourner la Map<OrderId, DeliveryOrderId>
+        return newDeliveryOrderIdsByOrderId;
+   
     }
-    
-
 
 }
