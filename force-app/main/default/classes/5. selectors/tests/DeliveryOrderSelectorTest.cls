@@ -2,7 +2,7 @@
 public class DeliveryOrderSelectorTest {
 
     @isTest
-    static void singleaction11GetDeliveryOrdersByOrderIds() {
+    static void singleAction_selectByOrderIds() {
 
         // GIVEN
         List<Account> a = TestDataFactory.createAccounts(1, 'Particulier', 'France');
@@ -12,7 +12,7 @@ public class DeliveryOrderSelectorTest {
                 accountIds.add(acc.Id);
             }
 
-        List<Order> o = TestDataFactory.createOrders(accountIds, 3, 1);
+        List<Order> o = TestDataFactory.createOrders(1, 3, accountIds);
             // Build Order Ids List<Id>
             List<Id> orderIds = new List<Id>();
             for (Order ord : o) {
@@ -25,7 +25,7 @@ public class DeliveryOrderSelectorTest {
 
         // WHEN
         Test.startTest();
-            List<Livraison__c> result = DeliveryOrderSelector.getDeliveryOrdersByOrderIds(orderIds);
+            List<Livraison__c> result = DeliveryOrderSelector.selectByOrderIds(orderIds);
         Test.stopTest();
 
         // THEN
@@ -43,7 +43,7 @@ public class DeliveryOrderSelectorTest {
 
 
     @isTest
-    static void bulkaction12GetDeliveryOrdersByOrderIds() {
+    static void bulkActions_selectByOrderIds() {
 
         // GIVEN
         List<Account> a = TestDataFactory.createAccounts(1, 'Professionnel', 'Belgique');
@@ -69,7 +69,7 @@ public class DeliveryOrderSelectorTest {
     
         // WHEN
         Test.startTest();
-            List<Livraison__c> result = DeliveryOrderSelector.getDeliveryOrdersByOrderIds(orderIds);
+            List<Livraison__c> result = DeliveryOrderSelector.selectByOrderIds(orderIds);
         Test.stopTest();
 
         // THEN
@@ -81,7 +81,7 @@ public class DeliveryOrderSelectorTest {
     }
 
     @isTest
-    static void positivebehavior13GetDeliveryOrdersByOrderIds() {
+    static void positiveBehavior_selectByOrderIds() {
         
         // GIVEN
         List<Account> a = TestDataFactory.createAccounts(10, 'Particulier', 'France');
@@ -106,7 +106,7 @@ public class DeliveryOrderSelectorTest {
          
         // WHEN
         Test.startTest();
-            List<Livraison__c> result = DeliveryOrderSelector.getDeliveryOrdersByOrderIds(orderIds);
+            List<Livraison__c> result = DeliveryOrderSelector.selectByOrderIds(orderIds);
         Test.stopTest();
 
         // THEN
@@ -118,7 +118,7 @@ public class DeliveryOrderSelectorTest {
     }
 
     @isTest
-    static void negativebehavior14GetDeliveryOrdersByOrderIds() {
+    static void negativeBehavior_selectByOrderIds() {
         
         // GIVEN
         List<Account> a = TestDataFactory.createAccounts(1, 'Particulier', 'France');
@@ -142,7 +142,7 @@ public class DeliveryOrderSelectorTest {
 
         // WHEN
         Test.startTest();
-            List<Livraison__c> result = DeliveryOrderSelector.getDeliveryOrdersByOrderIds(orderIds);
+            List<Livraison__c> result = DeliveryOrderSelector.selectByOrderIds(orderIds);
         Test.stopTest();
 
         // THEN
@@ -151,7 +151,7 @@ public class DeliveryOrderSelectorTest {
     }
 
     @isTest
-    static void restricteduser15GetDeliveryOrdersByOrderIds() {
+    static void restrictedUser_selectByOrderIds() {
         // GIVEN
         User restrictedUser = TestDataFactory.createRestrictedUser();
         List<Account> a = TestDataFactory.createAccounts(1, 'Particulier', 'France');
@@ -175,7 +175,7 @@ public class DeliveryOrderSelectorTest {
         // WHEN
         Test.startTest();
         System.runAs(restrictedUser) {
-            List<Livraison__c> result = DeliveryOrderSelector.getDeliveryOrdersByOrderIds(orderIds);
+            List<Livraison__c> result = DeliveryOrderSelector.selectByOrderIds(orderIds);
 
             // THEN
             System.assertEquals(0, result.size());
@@ -185,7 +185,7 @@ public class DeliveryOrderSelectorTest {
     }
 
     @isTest
-    static void singleaction21GetDeliveryOrdersByIds() {
+    static void singleAction_selectByIds() {
 
         // GIVEN
         List<Account> a = TestDataFactory.createAccounts(1, 'Particulier', 'France');
@@ -195,7 +195,7 @@ public class DeliveryOrderSelectorTest {
 
         // WHEN
         Test.startTest();
-        List<Livraison__c> result = DeliveryOrderSelector.getDeliveryOrdersByIds(new List<Id>{ d[0].Id });
+        List<Livraison__c> result = DeliveryOrderSelector.selectByIds(new List<Id>{ d[0].Id });
         Test.stopTest();
 
         // THEN
@@ -212,7 +212,7 @@ public class DeliveryOrderSelectorTest {
     }
 
     @isTest
-    static void Bulkactions22GetDeliveryOrdersByIds() {
+    static void bulkActions_selectByIds() {
         
         // GIVEN
         List<Account> a = TestDataFactory.createAccounts(200, 'Professionnel', 'Luxembourg');
