@@ -25,6 +25,15 @@ public with sharing class AccountDomain {
             'Suisse', 'CH', 'SUISSE', 'suisse', 'ch'
         };
 
+        Set<String> allowedCustomerType = new Set<String>{
+            'Professionnel', 'Particulier'
+        };
+
+        if (!allowedCustomerType.contains(accs.Customer_Type__c)) {
+            accs.addError('Customer Type must be Professionnel or Particulier');
+            return;
+        }
+
         if (!allowedShippingCountry.contains(accs.ShippingCountry)) {
             accs.addError('Country must be France or FR, Belgique or BE, Luxembourg or LU, Suisse or CH');
             return;

@@ -5,9 +5,9 @@ private class SalesPermissionTest {
     static void testSalesUserCanCreateLivraison() {
 
         // 1. Créer un utilisateur Sales
-        Profile p = [SELECT Id FROM Profile WHERE Name = 'Sales' LIMIT 1];
-        User u = TestDataFactory.createUser();
-
+        List<User> users = TestDataFactory.createUsers(new List<String>{ 'Sales' });
+        User u = users[0];
+        
 
         // 2. Récupérer la permission set créée dans Setup
         PermissionSet ps = [
