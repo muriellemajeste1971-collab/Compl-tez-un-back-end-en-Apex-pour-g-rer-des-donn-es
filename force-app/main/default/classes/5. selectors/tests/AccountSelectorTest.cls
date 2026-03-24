@@ -2,7 +2,7 @@
 private class AccountSelectorTest {
 
     @isTest
-    static void SingleactionGetAccountsByIds() {
+    static void singleAction() {
 
         // GIVEN
         List<Account> a = TestDataFactory.createAccounts(1, 'Particulier', 'France');
@@ -15,7 +15,7 @@ private class AccountSelectorTest {
 
         //WHEN
         Test.startTest();
-         List<Account> result = AccountSelector.getAccountsByIds(accountIds);
+         List<Account> result = AccountSelector.selectByIds(accountIds);
         Test.stopTest();
 
         // THEN
@@ -27,7 +27,7 @@ private class AccountSelectorTest {
     }
 
     @isTest
-    static void BulkactionsGetAccountsByIds() {
+    static void bulkActions() {
         
         // GIVEN
         List<Account> a = TestDataFactory.createAccounts(200, 'Professionnel', 'Luxembourg');
@@ -40,7 +40,7 @@ private class AccountSelectorTest {
        
        // WHEN
         Test.startTest();
-        List<Account> result = AccountSelector.getAccountsByIds(accountIds);
+        List<Account> result = AccountSelector.selectByIds(accountIds);
         Test.stopTest();
 
         // THEN
@@ -54,7 +54,7 @@ private class AccountSelectorTest {
     }
 
     @isTest
-    static void PositivebehaviorGetAccountsByIds() {
+    static void positiveBehaviour() {
     
         // GIVEN
         List<Account> a = TestDataFactory.createAccounts(10, 'Professionnel', 'France');
@@ -67,7 +67,7 @@ private class AccountSelectorTest {
        
        // WHEN
         Test.startTest();
-        List<Account> result = AccountSelector.getAccountsByIds(accountIds);
+        List<Account> result = AccountSelector.selectByIds(accountIds);
         Test.stopTest();
 
         // THEN
@@ -81,14 +81,14 @@ private class AccountSelectorTest {
     }
 
     @isTest
-    static void NegativebehaviorGetAccountsByIds() {
+    static void negativeBehaviour() {
      
         // GIVEN
          List<Id> accountIds = new List<Id>(); // List<Id>.size = 0 vide
 
         // WHEN
         Test.startTest();
-        List<Account> result = AccountSelector.getAccountsByIds(accountIds);
+        List<Account> result = AccountSelector.selectByIds(accountIds);
         Test.stopTest();
 
         // THEN
@@ -98,10 +98,11 @@ private class AccountSelectorTest {
 
 
     @isTest
-    static void RestricteduserGetAccountsByIds() {
+    static void restrictedUser() {
 
         // GIVEN
-        User restrictedUser = TestDataFactory.createRestrictedUser();
+        List<User> users = TestDataFactory.createUsers(new List<String>{ 'Chatter Free User' });
+        User restrictedUser = users[0];
         List<Account> a = TestDataFactory.createAccounts(1, 'Particulier', 'Suisse');
         
             // Build List<Id>
@@ -114,7 +115,7 @@ private class AccountSelectorTest {
         Test.startTest();
             System.runAs(restrictedUser) {
                 try {
-                    AccountSelector.getAccountsByIds(accountIds);
+                    AccountSelector.selectByIds(accountIds);
 
                     // Si aucune exception → erreur
                     System.assert(false, 'Une exception était attendue pour un utilisateur sans accès');

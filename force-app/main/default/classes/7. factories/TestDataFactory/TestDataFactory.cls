@@ -4,7 +4,7 @@ public class TestDataFactory {
     // 1. Create User Dummy Data for Unit Tests
     public static List<User> createUsers(List<String> profileNames) {
 
-        List<Profile> profiles = ProfileFactory.assemble(new List<String>{'Sales', 'Chatter Free User'}); 
+        List<Profile> profiles = ProfileFactory.assemble(profileNames); 
         List<User> users = UserFactory.assemble(profiles); 
 
         insert users; 
