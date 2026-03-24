@@ -1,12 +1,5 @@
-/**
- * @description Factory for working with Price Books in tests and data setup.
- * Ensures the Standard Price Book is active and returns it when requested.
- */
-public with sharing class PriceBookFactory {
 
-    private PriceBookFactory() {
-        // Prevent instantiation
-    }
+public with sharing class PriceBookFactory {
 
     /**
      * @description Ensures the Standard Price Book is active and returns it.
