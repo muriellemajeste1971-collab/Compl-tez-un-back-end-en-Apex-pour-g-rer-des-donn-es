@@ -1,132 +1,138 @@
-/**
- * This class contains unit tests for validating the behavior of Apex classes
- * and triggers.
- *
- * Unit tests are class methods that verify whether a particular piece
- * of code is working properly. Unit test methods take no arguments,
- * commit no data to the database, and are flagged with the testMethod
- * keyword in the method definition.
- *
- * All test methods in an org are executed whenever Apex code is deployed
- * to a production org to confirm correctness, ensure code
- * coverage, and prevent regressions. All Apex classes are
- * required to have at least 75% code coverage in order to be deployed
- * to a production org. In addition, all triggers must have some code coverage.
- * 
- * The @isTest class annotation indicates this class only contains test
- * methods. Classes defined with the @isTest annotation do not count against
- * the org size limit for all Apex scripts.
- *
- * See the Apex Language Reference for more information about Testing and Code Coverage.
- */
 @isTest
 private class OrderSelectorTest {
 
     @isTest
-    static void SingleactionGetAccountsByIds() {
+    static void singleAction() {
 
         // GIVEN
-        List<Account> a = TestDataFactory.createAccounts(1, 'Particulier', 'France');
-   
-
-        //WHEN
+        List<Account> accounts = TestDataFactory.createAccounts(1, 'Particulier', 'France');
+        List<Id> accountIds = new List<Id>();
+            for (Account acc : accounts) {
+                accountIds.add(acc.Id);
+            }
+        
+     	List<Order> orders = TestDataFactory.createOrders(1, 3, accountIds);
+        List<Id> orderIds = new List<Id>();
+            for (Order o : orders) {
+                orderIds.add(o.Id);
+            }
+ 
+        // WHEN
         Test.startTest();
-         List<Id> accountIds = new List<Id>{a[0].Id};
-         List<Account> result = AccountSelector.getAccountsByIds(accountIds);
+        List<Order> result = OrderSelector.selectByIds(orderIds);
         Test.stopTest();
 
         // THEN
-        System.Assert.areEqual('Account 1', a[0].Name);
-        System.Assert.areEqual('Particulier', a[0].Customer_Type__c);
-        System.Assert.areEqual('France', a[0].ShippingCountry);
         System.Assert.areEqual(1, result.size());
-    
+        System.Assert.areEqual(accounts[0].Id, result[0].AccountId);
+        System.assertNotEquals(null, result[0].ContractId);
+       
     }
 
     @isTest
-    static void BulkactionsGetAccountsByIds() {
+    static void bulkActions() {
         
         // GIVEN
-        List<Account> a = TestDataFactory.createAccounts(200, 'Professionnel', 'Luxembourg');
-        
-        // Build Set<Id>
+        List<Account> accounts = TestDataFactory.createAccounts(1, 'Particulier', 'France');
         List<Id> accountIds = new List<Id>();
-        for (Account acc : a) {
-        accountIds.add(acc.Id);
-        }
-       
-       // WHEN
+            for (Account acc : accounts) {
+                accountIds.add(acc.Id);
+            }
+
+     	List<Order> orders = TestDataFactory.createOrders(200, 3, accountIds);
+        List<Id> orderIds = new List<Id>();
+            for (Order o : orders) {
+                orderIds.add(o.Id);
+            }
+            
+            
+        // WHEN
         Test.startTest();
-        List<Account> result = AccountSelector.getAccountsByIds(accountIds);
+        List<Order> result = OrderSelector.selectByIds(orderIds);
         Test.stopTest();
 
+        List<Id> actualIds = new List<Id>();
+            for (Order o : result) {
+                actualIds.add(o.Id);
+            }
+
         // THEN
-        System.Assert.areEqual('Account 1', a[0].Name);
-        System.Assert.areEqual('Professionnel', a[0].Customer_Type__c);
-        System.Assert.areEqual('Luxembourg', a[0].ShippingCountry);
-        System.Assert.areEqual('Account 200', a[199].Name);
-        System.Assert.areEqual('Professionnel', a[199].Customer_Type__c);
-        System.Assert.areEqual('Luxembourg', a[199].ShippingCountry);
         System.Assert.areEqual(200, result.size());
+        System.assertEquals(orderIds, actualIds);
+    
     }
 
     @isTest
-    static void PositivebehaviorGetAccountsByIds() {
+    static void positiveBehaviour() {
     
         // GIVEN
-        List<Account> a = TestDataFactory.createAccounts(10, 'Professionnel', 'France');
-        
-        // Build Set<Id>
+        List<Account> accounts = TestDataFactory.createAccounts(1, 'Particulier', 'France');
         List<Id> accountIds = new List<Id>();
-        for (Account acc : a) {
-        accountIds.add(acc.Id);
-        }
-       
-       // WHEN
+            for (Account acc : accounts) {
+                accountIds.add(acc.Id);
+            }
+
+     	List<Order> orders = TestDataFactory.createOrders(3, 3, accountIds);
+        List<Id> orderIds = new List<Id>();
+            for (Order o : orders) {
+                orderIds.add(o.Id);
+            }
+            
+        // WHEN
         Test.startTest();
-        List<Account> result = AccountSelector.getAccountsByIds(accountIds);
+        List<Order> result = OrderSelector.selectByIds(orderIds);
         Test.stopTest();
 
         // THEN
-        System.Assert.areEqual('Account 1', a[0].Name);
-        System.Assert.areEqual('Professionnel', a[0].Customer_Type__c);
-        System.Assert.areEqual('France', a[0].ShippingCountry);
-        System.Assert.areEqual('Account 10', a[9].Name);
-        System.Assert.areEqual('Professionnel', a[9].Customer_Type__c);
-        System.Assert.areEqual('France', a[9].ShippingCountry);
-        System.Assert.areEqual(10, result.size());
+        System.Assert.areEqual(3, result.size());
+        System.Assert.areEqual(accounts[0].Id, result[0].AccountId);
+        System.assertNotEquals(null, result[0].ContractId);
+        // Order 1
+        System.Assert.areEqual(accounts[0].Id, result[1].AccountId);
+        System.assertNotEquals(null, result[1].ContractId);
+        // Order 2
+        System.Assert.areEqual(accounts[0].Id, result[2].AccountId);
+        System.assertNotEquals(null, result[2].ContractId);
+    
     }
 
     @isTest
-    static void NegativebehaviorGetAccountsByIds() {
-     
+    static void negativeBehaviour() {
         // GIVEN
-         List<Id> accountIds = new List<Id>(); // Set vide
+         List<Id> orderIds = new List<Id>(); // List<Id>.size = 0 vide
 
         // WHEN
         Test.startTest();
-        List<Account> result = AccountSelector.getAccountsByIds(accountIds);
+        List<Order> result = OrderSelector.selectByIds(orderIds);
         Test.stopTest();
 
         // THEN
         System.assertEquals(0, result.size());
     }
 
-
-
-    @isTest
-    static void RestricteduserGetAccountsByIds() {
+     @isTest
+    static void restrictedUsers() {
 
         // GIVEN
-        User restrictedUser = TestDataFactory.createRestrictedUser();
-        List<Account> accounts = TestDataFactory.createAccounts(1, 'Particulier', 'Suisse');
-        List<Id> ids = new List<Id>{ accounts[0].Id };
+        List<User> users = TestDataFactory.createUsers(new List<String>{ '' });
+        User restrictedUser = users[0];
 
+        List<Account> accounts = TestDataFactory.createAccounts(1, 'Particulier', 'France');
+        List<Id> accountIds = new List<Id>();
+            for (Account acc : accounts) {
+                accountIds.add(acc.Id);
+            }
+        
+     	List<Order> orders = TestDataFactory.createOrders(1, 3, accountIds);
+        List<Id> orderIds = new List<Id>();
+            for (Order o : orders) {
+                orderIds.add(o.Id);
+            }
          // WHEN
         Test.startTest();
             System.runAs(restrictedUser) {
                 try {
-                    AccountSelector.getAccountsByIds(ids);
+                    OrderSelector.selectByIds(orderIds);
 
                     // Si aucune exception → erreur
                     System.assert(false, 'Une exception était attendue pour un utilisateur sans accès');

@@ -1,6 +1,6 @@
 public with sharing class ContractFactory {
 
-    public static List<Contract> assemble(Integer numberOfOrders, Integer numberOfProducts, List<Id> accountIds) {
+    public static List<Contract> assemble(Integer numberOfOrders, List<Id> accountIds) {
     
         List<Contract> contracts = new List<Contract>();
 

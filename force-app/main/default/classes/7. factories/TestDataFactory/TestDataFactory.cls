@@ -26,7 +26,7 @@ public class TestDataFactory {
         Id pbId = Test.getStandardPricebookId();
 
         // 2. Create Contract Dummy Data Status Draft
-        List<Contract> contracts = ContractFactory.assemble(numberOfOrders, numberOfProducts, accountIds);
+        List<Contract> contracts = ContractFactory.assemble(numberOfOrders, accountIds);
         insert contracts;
             for (Contract c : contracts) {
                 c.Status = 'Activated';       
