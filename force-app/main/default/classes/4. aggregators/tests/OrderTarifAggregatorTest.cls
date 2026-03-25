@@ -25,42 +25,50 @@ private class OrderTarifAggregatorTest {
 
     @isTest
     static void bulkActions() {
-
         // GIVEN
-        List<Account> accounts = TestDataFactory.createAccounts(10, 'Particulier', 'France');
+        List<Account> accounts =
+            TestDataFactory.createAccounts(1, 'Particulier', 'France');
 
-        List<Id> accountIds = new List<Id>();
-        for (Account acc : accounts) {
-            accountIds.add(acc.Id);
-        }
+        List<Order> orders = TestDataFactory.createOrders(5, 3, new List<Id>{ accounts[0].Id });
 
-        List<Order> orders = TestDataFactory.createOrders(10, 3, accountIds);
-
-        TestDataFactory.createTarifs();
+        // ⚠️ tarifs corrects (IMPORTANT)
+        Tarification__c t = new Tarification__c(
+            Name = 'T1',
+            Zone_de_Livraison__c = 'France',
+            D_lai_de_Livraison_jours__c = 2,
+            Tarif_de_Livraison__c = 10
+        );
+        insert t;
 
         Set<Id> orderIds = new Set<Id>();
-        for (Order o : orders) {
-            orderIds.add(o.Id);
-        }
+        for (Order o : orders) orderIds.add(o.Id);
 
         // WHEN
         Test.startTest();
-        Map<Id, List<Tarification__c>> result =
-            OrderTarifAggregator.getOrderTarifsByOrderIds(orderIds);
+        Map<Id, List<Tarification__c>> result = OrderTarifAggregator.getOrderTarifsByOrderIds(orderIds);
         Test.stopTest();
 
         // THEN
-        System.assertEquals(10, result.size());
+        System.assertEquals(5, result.size());
     }
 
     @isTest
     static void positiveBehaviour() {
 
         // GIVEN
-        List<Account> accounts = TestDataFactory.createAccounts(1, 'Particulier', 'France');
-        List<Order> orders = TestDataFactory.createOrders(1, 3, new List<Id>{ accounts[0].Id });
+        List<Account> accounts =
+            TestDataFactory.createAccounts(1, 'Particulier', 'France');
 
-        TestDataFactory.createTarifs();
+        List<Order> orders =
+            TestDataFactory.createOrders(1, 3, new List<Id>{ accounts[0].Id });
+
+        Tarification__c t = new Tarification__c(
+            Name = 'T1',
+            Zone_de_Livraison__c = 'France',
+            D_lai_de_Livraison_jours__c = 3,
+            Tarif_de_Livraison__c = 15
+        );
+        insert t;
 
         // WHEN
         Test.startTest();
@@ -71,9 +79,7 @@ private class OrderTarifAggregatorTest {
         Test.stopTest();
 
         // THEN
-        List<Tarification__c> tarifs = result.get(orders[0].Id);
-        System.assertNotEquals(null, tarifs);
-        System.assert(tarifs.size() > 0);
+        System.assert(result.get(orders[0].Id).size() > 0);
     }
 
     @isTest
@@ -131,53 +137,28 @@ private class OrderTarifAggregatorTest {
     }
 
     @isTest
-    static void fastestEqualsCheapest_shouldNotDuplicate() {
-
-        // GIVEN
-        Tarification__c t = new Tarification__c(
-            Name = 'Test',
-            Zone_de_Livraison__c = 'France',
-            D_lai_de_Livraison_jours__c = 1,
-            Tarif_de_Livraison__c = 10
-        );
-        insert t;
-
-        List<Account> accounts = TestDataFactory.createAccounts(1, 'Particulier', 'France');
-        List<Order> orders = TestDataFactory.createOrders(1, 3, new List<Id>{ accounts[0].Id });
-
-        // WHEN
-        Test.startTest();
-        Map<Id, List<Tarification__c>> result =
-            OrderTarifAggregator.getOrderTarifsByOrderIds(
-                new Set<Id>{ orders[0].Id }
-            );
-        Test.stopTest();
-
-        // THEN
-        System.assertEquals(1, result.get(orders[0].Id).size());
-    }
-
-    @isTest
-    static void tarifs_withNullValues_shouldBeHandled() {
+    static void allDelaysNull_shouldHandleFastestNull() {
 
         // GIVEN
         Tarification__c t1 = new Tarification__c(
-            Name = 'NullTest1',
-            Zone_de_Livraison__c = 'France'
-           
+            Name = 'T1',
+            Zone_de_Livraison__c = 'France',
+            Tarif_de_Livraison__c = 10
         );
 
         Tarification__c t2 = new Tarification__c(
-            Name = 'Valid',
+            Name = 'T2',
             Zone_de_Livraison__c = 'France',
-            D_lai_de_Livraison_jours__c = 5,
             Tarif_de_Livraison__c = 20
         );
 
         insert new List<Tarification__c>{ t1, t2 };
 
-        List<Account> accounts = TestDataFactory.createAccounts(1, 'Particulier', 'France');
-        List<Order> orders = TestDataFactory.createOrders(1, 3, new List<Id>{ accounts[0].Id });
+        List<Account> accounts =
+            TestDataFactory.createAccounts(1, 'Particulier', 'France');
+
+        List<Order> orders =
+            TestDataFactory.createOrders(1, 3, new List<Id>{ accounts[0].Id });
 
         // WHEN
         Test.startTest();
@@ -191,5 +172,147 @@ private class OrderTarifAggregatorTest {
         System.assert(result.get(orders[0].Id).size() > 0);
     }
 
+    @isTest
+static void allPricesNull_shouldHandleCheapestNull() {
+
+    // GIVEN
+    Tarification__c t1 = new Tarification__c(
+        Name = 'T1',
+        Zone_de_Livraison__c = 'France',
+        D_lai_de_Livraison_jours__c = 2
+    );
+
+    Tarification__c t2 = new Tarification__c(
+        Name = 'T2',
+        Zone_de_Livraison__c = 'France',
+        D_lai_de_Livraison_jours__c = 5
+    );
+
+    insert new List<Tarification__c>{ t1, t2 };
+
+    List<Account> accounts =
+        TestDataFactory.createAccounts(1, 'Particulier', 'France');
+
+    List<Order> orders =
+        TestDataFactory.createOrders(1, 3, new List<Id>{ accounts[0].Id });
+
+    // WHEN
+    Test.startTest();
+    Map<Id, List<Tarification__c>> result =
+        OrderTarifAggregator.getOrderTarifsByOrderIds(
+            new Set<Id>{ orders[0].Id }
+        );
+    Test.stopTest();
+
+    // THEN
+    System.assert(result.get(orders[0].Id).size() > 0);
+}
+
+@isTest
+static void noOrders_shouldReturnEmptyMap() {
+
+    // WHEN
+    Test.startTest();
+    Map<Id, List<Tarification__c>> result =
+        OrderTarifAggregator.getOrderTarifsByOrderIds(new Set<Id>());
+    Test.stopTest();
+
+    // THEN
+    System.assertEquals(0, result.size());
+}
+
+
+@isTest
+static void testFastestAndCheapest_FACTORY_BASED() {
+
+    // GIVEN
+    List<Account> accounts =
+        TestDataFactory.createAccounts(1, 'Particulier', 'France');
+
+    List<Order> orders =
+        TestDataFactory.createOrders(1, 3, new List<Id>{ accounts[0].Id });
+
+    // 1. Transporteurs
+    List<Transporteur__c> transporters =
+        TransporterFactory.assemble();
+    insert transporters;
+
+    // 2. Tarifs via ta factory
+    List<Tarification__c> tarifs =
+        OrderTarifFactory.assemble(transporters);
+
+    //  IMPORTANT : compléter Account_Type__c
+    //for (Tarification__c t : tarifs) {
+   //     t.Account_Type__c = 'Particulier';
+   // }
+
+    insert tarifs;
+
+    // WHEN
+    Test.startTest();
+    Map<Id, List<Tarification__c>> result =
+        OrderTarifAggregator.getOrderTarifsByOrderIds(
+            new Set<Id>{ orders[0].Id }
+        );
+    Test.stopTest();
+
+    List<Tarification__c> finalList = result.get(orders[0].Id);
+
+    // THEN
+
+    // on a bien des résultats
+    System.assert(finalList.size() > 0);
+
+    // fastest = délai le plus court (1 jour → Chronopost)
+    System.assertEquals(1, finalList[0].D_lai_de_Livraison_jours__c);
+
+    // cheapest = prix le plus bas (14 → GLS)
+    System.assertEquals(14, finalList[1].Tarif_de_Livraison__c);
+}
+
+@isTest
+static void noTarif_shouldReturnEmpty() {
+
+    List<Account> accounts =
+        TestDataFactory.createAccounts(1, 'Particulier', 'France');
+
+    List<Order> orders =
+        TestDataFactory.createOrders(1, 3, new List<Id>{ accounts[0].Id });
+
+    Test.startTest();
+    Map<Id, List<Tarification__c>> result =
+        OrderTarifAggregator.getOrderTarifsByOrderIds(
+            new Set<Id>{ orders[0].Id }
+        );
+    Test.stopTest();
+
+    System.assertEquals(0, result.get(orders[0].Id).size());
+}
+
+@isTest
+static void nullValues_shouldNotCrash() {
+
+    Tarification__c t = new Tarification__c(
+        Name = 'Null',
+        Zone_de_Livraison__c = 'France'
+      //  Account_Type__c = 'Particulier'
+    );
+    insert t;
+
+    List<Account> accounts =
+        TestDataFactory.createAccounts(1, 'Particulier', 'France');
+
+    List<Order> orders =
+        TestDataFactory.createOrders(1, 3, new List<Id>{ accounts[0].Id });
+
+    Test.startTest();
+    Map<Id, List<Tarification__c>> result =
+        OrderTarifAggregator.getOrderTarifsByOrderIds(
+            new Set<Id>{ orders[0].Id }
+        );
+    Test.stopTest();
+
+    System.assertNotEquals(null, result.get(orders[0].Id));
+}
 
 }

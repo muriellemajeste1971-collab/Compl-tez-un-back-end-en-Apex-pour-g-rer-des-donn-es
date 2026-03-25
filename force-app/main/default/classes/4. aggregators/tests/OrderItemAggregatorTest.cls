@@ -45,12 +45,12 @@ static void singleAction() {
 static void bulkActions() {
 
     // GIVEN
-    List<Account> accounts = TestDataFactory.createAccounts(10, 'Particulier', 'France');
+    List<Account> accounts = TestDataFactory.createAccounts(1, 'Particulier', 'France');
 
     List<Id> accountIds = new List<Id>();
     for (Account acc : accounts) accountIds.add(acc.Id);
 
-    List<Order> orders = TestDataFactory.createOrders(10, 3, accountIds);
+    List<Order> orders = TestDataFactory.createOrders(200, 3, accountIds);
 
     Set<Id> orderIds = new Set<Id>();
     for (Order o : orders) orderIds.add(o.Id);
@@ -62,7 +62,7 @@ static void bulkActions() {
     Test.stopTest();
 
     // THEN
-    System.assertEquals(10, result.size());
+    System.assertEquals(200, result.size());
 }
 
 @isTest
