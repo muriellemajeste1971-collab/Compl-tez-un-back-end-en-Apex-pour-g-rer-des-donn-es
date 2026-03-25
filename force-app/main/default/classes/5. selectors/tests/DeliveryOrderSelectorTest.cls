@@ -203,32 +203,35 @@ public class DeliveryOrderSelectorTest {
         System.assertEquals(0, result.size());
     }
 
-    @isTest
+   @isTest
     static void restrictedUser() {
 
         // GIVEN
-        List<User> users = TestDataFactory.createUsers(
-            new List<String>{ 'Chatter Free User' }
-        );
+        List<User> users = TestDataFactory.createUsers(new List<String>{ 'Chatter Free User' });
         User restrictedUser = users[0];
 
-        List<Account> a = TestDataFactory.createAccounts(1, 'Particulier', 'France');
-        List<Order> o = TestDataFactory.createOrders(1, 1, new List<Id>{ a[0].Id });
-        TestDataFactory.createTarifs();
-        TestDataFactory.createDeliveryOrders(a, o);
+        List<Account> accounts = TestDataFactory.createAccounts(1, 'Particulier', 'France');
+        List<Order> orders = TestDataFactory.createOrders( 1, 3, new List<Id>{ accounts[0].Id });
 
-        List<Id> orderIds = new List<Id>{ o[0].Id };
+        TestDataFactory.createTarifs();
+        TestDataFactory.createDeliveryOrders(accounts, orders);
+
+        List<Id> orderIds = new List<Id>{ orders[0].Id };
 
         // WHEN
         Test.startTest();
+        List<Livraison__c> result;
         System.runAs(restrictedUser) {
-            List<Livraison__c> result =
-                DeliveryOrderSelector.selectByOrderIds(orderIds);
-
-            // THEN
-            System.assertNotEquals(null, result);
+            result = DeliveryOrderSelector.selectByOrderIds(orderIds);
         }
         Test.stopTest();
-    }
 
+        // THEN
+        // Le user ne voit rien
+        System.assertEquals(
+            0,
+            result.size(),
+            'Un utilisateur Chatter Free ne doit voir aucun enregistrement'
+        );
+    }
 }

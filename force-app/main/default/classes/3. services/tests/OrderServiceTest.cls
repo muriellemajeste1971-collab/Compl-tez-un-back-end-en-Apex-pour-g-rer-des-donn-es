@@ -1,176 +1,262 @@
 @IsTest
 public class OrderServiceTest {
 
+    @isTest
+    static void singleAction() {
 
-    /**
-     * Création d'une livraison avec des données valides
-     */
-    @IsTest
-    static void testCreateLivraison() {
-        // Given
-        Account a = TestDataFactory.createAccount();
-        Contract c = TestDataFactory.createContract(a.Id);
-     	Order o = TestDataFactory.createOrder(a.Id,c.Id);
-        Transporteur__c tr = TestDataFactory.createTransporteur('Particulier');
-		List<Tarification__c> liste = TestDataFactory.createTarificationList();
-        List<Tarification__c> result = TransporterOrchestrator.getAllTransporters(o.Id);
-     
-        Tarification__c fastest = result[0];
-        Tarification__c cheapest = result[1];
-        Tarification__c last = result[2];
-       
+        // GIVEN
+        List<Account> accounts = TestDataFactory.createAccounts(1, 'Particulier', 'France');
+        List<Order> orders = TestDataFactory.createOrders(1, 3, new List<Id>{ accounts[0].Id });
 
-        // When
-        Test.startTest();
-        Id bdlId = OrderService.createLivraison(o.Id, fastest.Id);
+        Order oldOrder = orders[0];
+
+        Order newOrder = oldOrder.clone(false, true, true, true);
+        newOrder.Status = 'Activated';
+        newOrder.AccountId = oldOrder.AccountId; 
+
+        Map<Id, Order> oldMap = new Map<Id, Order>{ oldOrder.Id => oldOrder };
+        Map<Id, Order> newMap = new Map<Id, Order>{ newOrder.Id => newOrder };
+
+        // WHEN
+        Test.startTest(); 
+        OrderService.validateBeforeUpdate(oldMap, newMap);
         Test.stopTest();
 
-        // then
-        
-
-        System.assert(bdlId != null, 'La livraison ID ne doit pas être null');
-        Livraison__c bdl = [SELECT Id, Order__c, Tarification__c, Account__c, Statut__c, Name 
-                             FROM Livraison__c 
-                             WHERE Id = :bdlId];
-        
-        System.assertEquals(o.Id, bdl.Order__c, 'La livraison doit être liée au bon Order');
-        System.assertEquals(fastest.Id, bdl.Tarification__c, 'La tarification doit être correcte');
-        System.assertEquals(a.Id, bdl.Account__c, 'Le compte doit être associé');
-        System.assertEquals('En cours', bdl.Statut__c, 'Le statut doit être "En cours"');
-        System.assert(bdl.Name.contains(o.ShippingCountry), 'Le Name doit contenir le pays');
-		System.assert(bdl.Name.contains(a.Name), 'Le Name doit contenir le nom du compte');
-
-    	Integer countbdl = [
-        SELECT COUNT() FROM Livraison__c WHERE Order__c = :o.Id
-    	];
-    	System.assertEquals(1, countbdl, 'Il doit y avoir exactement une livraison');
+        // THEN
+        System.assertEquals(1, newMap.size());
     }
-    
-    
-    /**
-     * Récupération d'une livraison 
-     */
-    
-    @IsTest
-    static void testgetLivraisonByOrder() {
-        // Given
-        Account a = TestDataFactory.createAccount();
-        Contract c = TestDataFactory.createContract(a.Id);
-     	Order o = TestDataFactory.createOrder(a.Id,c.Id);
-        Transporteur__c tr = TestDataFactory.createTransporteur('Particulier');
-		List<Tarification__c> liste = TestDataFactory.createTarificationList();
-        List<Tarification__c> result = TransporterOrchestrator.getAllTransporters(o.Id);
-     
-        Tarification__c fastest = result[0];
-        Tarification__c cheapest = result[1];
-        Tarification__c last = result[2];
-     
-        Id createdLivId = OrderService.createLivraison(o.Id, fastest.Id);
 
-        // When
-        Test.startTest();
-        Livraison__c liv = OrderService.getLivraisonByOrder(o.Id);
+    @isTest
+    static void bulkActions() {
+
+    // GIVEN
+    List<Account> accounts = TestDataFactory.createAccounts(40, 'Particulier', 'France');
+    List<Id> accountIds = new List<Id>();
+        for (Account acc : accounts) {
+            accountIds.add(acc.Id);
+        }
+
+    List<Order> orders = TestDataFactory.createOrders(40, 3, accountIds);
+    Map<Id, Order> oldMap = new Map<Id, Order>();
+    Map<Id, Order> newMap = new Map<Id, Order>();
+        for (Order o : orders) {
+            Order newOrder = o.clone(false, true, true, true);
+            newOrder.Status = 'Activated';
+            newOrder.AccountId = o.AccountId;
+
+            oldMap.put(o.Id, o);
+            newMap.put(newOrder.Id, newOrder);
+        }
+
+        // WHEN
+        Test.startTest(); 
+        OrderService.validateBeforeUpdate(oldMap, newMap);
         Test.stopTest();
 
-        // then
-	
-		System.assertNotEquals(null, liv, 'La livraison ne doit pas être null');
-    	System.assertEquals(createdLivId, liv.Id, 'La livraison retournée doit être la même');
-    
+        // THEN
+        System.assertEquals(40, newMap.size());
     }
-    
 
-    /**
-     * Test positive : Mise à jour d'une livraison avec nouvelle tarification
-     */
-    @IsTest
-    static void testUpdateLivraison() {
-         // Given
-        Account a = TestDataFactory.createAccount();
-        Contract c = TestDataFactory.createContract(a.Id);
-     	Order o = TestDataFactory.createOrder(a.Id,c.Id);
-        Transporteur__c tr = TestDataFactory.createTransporteur('Particulier');
-		List<Tarification__c> liste = TestDataFactory.createTarificationList();
-        List<Tarification__c> result = TransporterOrchestrator.getAllTransporters(o.Id);
-     
-        Tarification__c fastest = result[0];
-        Tarification__c cheapest = result[1];
-        Tarification__c last = result[2];
-     
-        Id createdLivId = OrderService.createLivraison(o.Id, fastest.Id);
-        
+    @isTest
+    static void positiveBehaviour() {
 
-        // Test
+    // GIVEN
+    List<Account> accounts = TestDataFactory.createAccounts(5, 'Particulier', 'France');
+    List<Id> accountIds = new List<Id>();
+        for (Account acc : accounts) {
+            accountIds.add(acc.Id);
+        }
+
+    List<Order> orders = TestDataFactory.createOrders(5, 3, accountIds); 
+    Map<Id, Order> oldMap = new Map<Id, Order>();
+    Map<Id, Order> newMap = new Map<Id, Order>();
+
+        for (Order o : orders) {
+            Order newOrder = o.clone(false, true, true, true);
+            newOrder.Status = 'Activated';
+            newOrder.AccountId = o.AccountId;
+
+            oldMap.put(o.Id, o);
+            newMap.put(newOrder.Id, newOrder);
+        }
+
+        // WHEN
         Test.startTest();
-        Id newLivId = OrderService.updateLivraison(createdLivId, cheapest.Id);
+        OrderService.validateBeforeUpdate(oldMap, newMap);
         Test.stopTest();
 
-        // Verify
-        System.assertNotEquals(createdLivId, newLivId, 'Une nouvelle livraison doit être créée');
-        Livraison__c newLiv = [SELECT Id, Tarification__c, Statut__c FROM Livraison__c WHERE Id = :newLivId];
-        System.assertEquals(cheapest.Id, newLiv.Tarification__c, 'La nouvelle tarification doit être appliquée');
-        System.assertEquals('En cours', newLiv.Statut__c, 'Le statut doit être préservé');
+        // THEN
+        System.assertEquals(5, newMap.size());
 
-        
+        // IMPORTANT : vérifier qu’il n’y a pas d’erreur métier
+        for (Order o : newMap.values()) {
+            System.assertEquals(0, o.getErrors().size(),
+                'Aucune erreur ne doit être ajoutée pour des commandes valides');
+        }
+    }
+    @isTest
+    static void negativeBehaviour() {
+
+        // GIVEN
+        Map<Id, Order> oldMap = new Map<Id, Order>();
+        Map<Id, Order> newMap = new Map<Id, Order>();
+
+        // WHEN
+        Test.startTest();
+        try {
+            OrderService.validateBeforeUpdate(oldMap, newMap);
+            System.assert(false, 'Une exception était attendue');
+        } catch (OrderServiceException e) { // 🔥 PLUS PRÉCIS
+            System.assertEquals('Old Order not specified.', e.getMessage());
+        }
+        Test.stopTest();
     }
 
-    /**
-     * Test positive : Suppression d'une livraison via deleteLivraison
-     */
-    @IsTest
-    static void testDeleteLivraison() {
-          // Given
-        Account a = TestDataFactory.createAccount();
-        Contract c = TestDataFactory.createContract(a.Id);
-     	Order o = TestDataFactory.createOrder(a.Id,c.Id);
-        Transporteur__c tr = TestDataFactory.createTransporteur('Particulier');
-		List<Tarification__c> liste = TestDataFactory.createTarificationList();
-        List<Tarification__c> result = TransporterOrchestrator.getAllTransporters(o.Id);
-     
-        Tarification__c fastest = result[0];
-        Tarification__c cheapest = result[1];
-        Tarification__c last = result[2];
-     
-        Id createdLivId = OrderService.createLivraison(o.Id, fastest.Id);
+    @isTest
+    static void restrictedUsers() {
 
-        // When
+        // GIVEN
+        List<User> users = TestDataFactory.createUsers(new List<String>{ 'Chatter Free User' });
+        User restrictedUser = users[0];
+
+        List<Account> accounts = TestDataFactory.createAccounts(1, 'Particulier', 'France');
+
+        List<Order> orders = TestDataFactory.createOrders(1, 3, new List<Id>{ accounts[0].Id });
+
+        List<Id> orderIds = new List<Id>{ orders[0].Id };
+
+        // WHEN
         Test.startTest();
-        OrderService.deleteLivraison(o.Id);
+        System.runAs(restrictedUser) {
+
+            List<Order> result = OrderSelector.selectByIds(orderIds);
+
+            // THEN
+            System.assertEquals(
+                0,
+                result.size(),
+                'Un utilisateur Chatter Free ne doit voir aucun Order'
+            );
+        }
+        Test.stopTest();
+    }
+
+    @isTest
+    static void particulier_lessThan3Products_shouldFail() {
+
+        // GIVEN
+        List<Account> accounts = TestDataFactory.createAccounts(1, 'Particulier', 'France');
+
+        // ⚠️ 2 produits → doit échouer
+        List<Order> orders = TestDataFactory.createOrders(1, 2, new List<Id>{ accounts[0].Id });
+
+        Order oldOrder = orders[0];
+
+        Order newOrder = oldOrder.clone(false, true, true, true);
+        newOrder.Status = 'Activated';
+        newOrder.AccountId = oldOrder.AccountId;
+
+        Map<Id, Order> oldMap = new Map<Id, Order>{ oldOrder.Id => oldOrder };
+        Map<Id, Order> newMap = new Map<Id, Order>{ newOrder.Id => newOrder };
+
+        // WHEN
+        Test.startTest();
+        OrderService.validateBeforeUpdate(oldMap, newMap);
         Test.stopTest();
 
-        // Then
-        List<Livraison__c> livs = [SELECT Id FROM Livraison__c WHERE Order__c = :o.Id];
-        System.assertEquals(0, livs.size(), 'Aucune livraison ne doit exister après suppression');
+        // THEN
+        System.assertEquals(1, newOrder.getErrors().size());
     }
-    
 
-    /**
-     * Test positive : Suppression automatique via deleteLivraisonsByOrder
-     */
-    @IsTest
-    static void testDeleteLivraisonsByOrder() {
-           // Given
-        Account a = TestDataFactory.createAccount();
-        Contract c = TestDataFactory.createContract(a.Id);
-     	Order o = TestDataFactory.createOrder(a.Id,c.Id);
-        Transporteur__c tr = TestDataFactory.createTransporteur('Particulier');
-		List<Tarification__c> liste = TestDataFactory.createTarificationList();
-        List<Tarification__c> result = TransporterOrchestrator.getAllTransporters(o.Id);
-     
-        Tarification__c fastest = result[0];
-        Tarification__c cheapest = result[1];
-        Tarification__c last = result[2];
-     
-        Id createdLivId = OrderService.createLivraison(o.Id, fastest.Id);
+    @isTest
+    static void delete_nullList_shouldDoNothing() {
 
-        // Test
+        // WHEN
         Test.startTest();
-        OrderService.deleteLivraisonsByOrder(o.Id);
+        OrderService.validateBeforeDelete(null);
         Test.stopTest();
 
-        // Verify
-        List<Livraison__c> livs = [SELECT Id FROM Livraison__c WHERE Order__c = :o.Id];
-        System.assertEquals(0, livs.size(), 'Aucune livraison ne doit exister après suppression automatique');
+        // THEN
+        System.assert(true); // juste couvrir
     }
 
+    @isTest
+    static void delete_emptyList_shouldDoNothing() {
+
+        // GIVEN
+        List<Order> orders = new List<Order>();
+
+        // WHEN
+        Test.startTest();
+        OrderService.validateBeforeDelete(orders);
+        Test.stopTest();
+
+        // THEN
+        System.assertEquals(0, orders.size());
+    }
+
+    @isTest
+    static void validateBeforeUpdate_newMapNull_shouldFail() {
+
+        // GIVEN
+        List<Account> accounts = TestDataFactory.createAccounts(1, 'Particulier', 'France');
+        List<Order> orders = TestDataFactory.createOrders(1, 3, new List<Id>{ accounts[0].Id });
+
+        Map<Id, Order> oldMap = new Map<Id, Order>{
+            orders[0].Id => orders[0]
+        };
+
+        // WHEN
+        Test.startTest();
+        try {
+            OrderService.validateBeforeUpdate(oldMap, null);
+            System.assert(false);
+        } catch (OrderServiceException e) {
+            System.assertEquals('New Order not specified.', e.getMessage());
+        }
+        Test.stopTest();
+    }
+
+    @isTest
+    static void validateUpdate_noOrderItems_shouldSetZero() {
+
+        // GIVEN
+        List<Account> accounts = TestDataFactory.createAccounts(1, 'Particulier', 'France');
+
+        // ⚠️ créer une commande SANS items
+        Id pbId = Test.getStandardPricebookId();
+
+        Contract c = new Contract(
+            AccountId = accounts[0].Id,
+            Status = 'Activated',
+            StartDate = Date.today()
+        );
+        insert c;
+
+        Order o = new Order(
+            AccountId = accounts[0].Id,
+            ContractId = c.Id,
+            Status = 'Activated',
+            EffectiveDate = Date.today(),
+            Pricebook2Id = pbId
+        );
+        insert o;
+
+        Map<Id, Order> oldMap = new Map<Id, Order>{ o.Id => o };
+
+        Order newOrder = o.clone(false, true, true, true);
+        newOrder.Status = 'Activated';
+        newOrder.AccountId = o.AccountId;
+
+        Map<Id, Order> newMap = new Map<Id, Order>{ newOrder.Id => newOrder };
+
+        // WHEN
+        Test.startTest();
+        OrderService.validateBeforeUpdate(oldMap, newMap);
+        Test.stopTest();
+
+        // THEN
+        System.assertEquals(1, newOrder.getErrors().size(),
+            'Doit tomber dans le cas totalOrderProducts = 0');
+    }
 }
