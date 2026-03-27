@@ -1,0 +1,19 @@
+{
+  "folders": [
+    {
+      "path": "/Users/muriellemajeste/Documents/Salesforce/OpenClassrooms/Projet 7"
+    }
+  ],
+  "settings": {
+    "eslint.workingDirectories": [
+      "/Users/muriellemajeste/Documents/Salesforce/OpenClassrooms/Projet 7"
+    ],
+    "eslint.validate": [
+      "javascript",
+      "typescript"
+    ],
+    "eslint.options": {
+      "overrideConfigFile": "/Users/muriellemajeste/Documents/Salesforce/OpenClassrooms/Projet 7/.eslintrc.json"
+    }
+  }
+}

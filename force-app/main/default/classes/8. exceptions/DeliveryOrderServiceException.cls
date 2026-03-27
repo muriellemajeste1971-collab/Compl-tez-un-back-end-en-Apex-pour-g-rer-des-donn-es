@@ -1,0 +1,1 @@
+public with sharing class DeliveryOrderServiceException extends Exception {}
