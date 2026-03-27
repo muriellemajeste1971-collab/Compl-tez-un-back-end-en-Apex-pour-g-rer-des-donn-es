@@ -2,7 +2,7 @@
 public class OrderServiceTest {
 
     @isTest
-    static void singleAction() {
+    static void test01_singleAction() {
 
         // GIVEN
         List<Account> accounts = TestDataFactory.createAccounts(1, 'Particulier', 'France');
@@ -27,27 +27,22 @@ public class OrderServiceTest {
     }
 
     @isTest
-    static void bulkActions() {
+    static void test02_bulkActions() {
 
         // GIVEN
-        List<Account> accounts =
-            TestDataFactory.createAccounts(1, 'Particulier', 'France');
-
+        List<Account> accounts = TestDataFactory.createAccounts(1, 'Particulier', 'France');
         List<Id> accountIds = new List<Id>();
-        for (Account acc : accounts) {
-            accountIds.add(acc.Id);
-        }
+            for (Account acc : accounts) {
+                accountIds.add(acc.Id);
+            }
 
-        // ⚠️ PAS 200 → limite DML
-        List<Order> orders =
-            TestDataFactory.createOrders(200, 3, accountIds);
+        List<Order> orders = TestDataFactory.createOrders(200, 3, accountIds);
 
         Map<Id, Order> oldMap = new Map<Id, Order>();
         Map<Id, Order> newMap = new Map<Id, Order>();
 
         for (Order o : orders) {
 
-            // OLD = version actuelle
             oldMap.put(o.Id, o);
 
             // NEW = même order (pas besoin de clone ici)
@@ -70,15 +65,11 @@ public class OrderServiceTest {
     }
 
     @isTest
-    static void positiveBehaviour() {
+    static void test03_positiveBehaviour() {
 
         // GIVEN
-        List<Account> accounts =
-            TestDataFactory.createAccounts(1, 'Particulier', 'France');
-
-        // ⚠️ 5 orders sur le même account = plus simple
-        List<Order> orders =
-            TestDataFactory.createOrders(5, 3, new List<Id>{ accounts[0].Id });
+        List<Account> accounts = TestDataFactory.createAccounts(1, 'Particulier', 'France');
+        List<Order> orders = TestDataFactory.createOrders(5, 3, new List<Id>{ accounts[0].Id });
 
         Map<Id, Order> oldMap = new Map<Id, Order>();
         Map<Id, Order> newMap = new Map<Id, Order>();
@@ -91,8 +82,8 @@ public class OrderServiceTest {
             // NEW = même order, juste avec status activé
             Order newOrder = new Order(
                 Id = o.Id,
-                AccountId = o.AccountId,
-                Status = 'Activated'
+                Status = 'Activated',
+                AccountId = o.AccountId
             );
 
             newMap.put(o.Id, newOrder);
@@ -106,7 +97,7 @@ public class OrderServiceTest {
         // THEN
         System.assertEquals(5, newMap.size());
 
-        // vérifier qu’il n’y a PAS d’erreur métier
+        // verifier qu il n y a PAS d erreur metier
         for (Order o : newMap.values()) {
             System.assertEquals(0, o.getErrors().size(),
                 'Aucune erreur attendue pour des commandes valides');
@@ -114,35 +105,74 @@ public class OrderServiceTest {
     }
 
     @isTest
-    static void negativeBehaviour() {
+    static void test04_negativeBehaviourParticulier() {
 
         // GIVEN
+        List<Account> accounts = TestDataFactory.createAccounts(1, 'Particulier', 'France');
+        List<Order> orders = TestDataFactory.createOrders(1, 2, new List<Id>{ accounts[0].Id });
+        
         Map<Id, Order> oldMap = new Map<Id, Order>();
         Map<Id, Order> newMap = new Map<Id, Order>();
 
-        // WHEN
+        //WHEN
         Test.startTest();
-        try {
-            OrderService.validateBeforeUpdate(oldMap, newMap);
-            System.assert(false, 'Une exception était attendue');
-        } catch (OrderServiceException e) { // 🔥 PLUS PRÉCIS
-            System.assertEquals('Old Order not specified.', e.getMessage());
-        }
+          for (Order o : orders) {
+                oldMap.put(o.Id, o);
+                Order newOrder = new Order(
+                    Id = o.Id,
+                    Status = 'Activated',
+                    AccountId = o.AccountId
+                );
+                newMap.put(newOrder.Id, newOrder);
+            }
+        OrderService.validateBeforeUpdate(oldMap, newMap);
         Test.stopTest();
+
+        //THEN
+        System.Assert.areEqual(1, newMap.get(orders[0].Id).getErrors().size());
+
     }
 
     @isTest
-    static void restrictedUsers() {
+    static void test04_negativeBehaviourProfessionnel() {
+
+        // GIVEN
+        List<Account> accounts = TestDataFactory.createAccounts(1, 'Professionnel', 'France');
+        List<Order> orders = TestDataFactory.createOrders(1, 4, new List<Id>{ accounts[0].Id });
+        
+        Map<Id, Order> oldMap = new Map<Id, Order>();
+        Map<Id, Order> newMap = new Map<Id, Order>();
+
+        //WHEN
+        Test.startTest();
+          for (Order o : orders) {
+                oldMap.put(o.Id, o);
+                Order newOrder = new Order(
+                    Id = o.Id,
+                    Status = 'Activated',
+                    AccountId = o.AccountId
+                );
+                newMap.put(newOrder.Id, newOrder);
+            }
+        OrderService.validateBeforeUpdate(oldMap, newMap);
+        Test.stopTest();
+
+        //THEN
+        System.Assert.areEqual(1, newMap.get(orders[0].Id).getErrors().size());
+    }
+
+    @isTest
+    static void test05_restrictedUsers() {
 
         // GIVEN
         List<User> users = TestDataFactory.createUsers(new List<String>{ 'Chatter Free User' });
         User restrictedUser = users[0];
 
         List<Account> accounts = TestDataFactory.createAccounts(1, 'Particulier', 'France');
-
         List<Order> orders = TestDataFactory.createOrders(1, 3, new List<Id>{ accounts[0].Id });
-
         List<Id> orderIds = new List<Id>{ orders[0].Id };
+        orders[0].Status = 'Activated';
+        update orders;
 
         // WHEN
         Test.startTest();
@@ -150,7 +180,6 @@ public class OrderServiceTest {
 
             List<Order> result = OrderSelector.selectByIds(orderIds);
 
-            // THEN
             System.assertEquals(
                 0,
                 result.size(),
@@ -160,62 +189,8 @@ public class OrderServiceTest {
         Test.stopTest();
     }
 
-    @isTest
-    static void particulier_lessThan3Products_shouldFail() {
-
-        // GIVEN
-        List<Account> accounts = TestDataFactory.createAccounts(1, 'Particulier', 'France');
-
-        // ⚠️ 2 produits → doit échouer
-        List<Order> orders = TestDataFactory.createOrders(1, 2, new List<Id>{ accounts[0].Id });
-
-        Order oldOrder = orders[0];
-
-        Order newOrder = oldOrder.clone(false, true, true, true);
-        newOrder.Status = 'Activated';
-        newOrder.AccountId = oldOrder.AccountId;
-
-        Map<Id, Order> oldMap = new Map<Id, Order>{ oldOrder.Id => oldOrder };
-        Map<Id, Order> newMap = new Map<Id, Order>{ newOrder.Id => newOrder };
-
-        // WHEN
-        Test.startTest();
-        OrderService.validateBeforeUpdate(oldMap, newMap);
-        Test.stopTest();
-
-        // THEN
-        System.assertEquals(1, newOrder.getErrors().size());
-    }
-
-    @isTest
-    static void delete_nullList_shouldDoNothing() {
-
-        // WHEN
-        Test.startTest();
-        OrderService.validateBeforeDelete(null);
-        Test.stopTest();
-
-        // THEN
-        System.assert(true); // juste couvrir
-    }
-
-    @isTest
-    static void delete_emptyList_shouldDoNothing() {
-
-        // GIVEN
-        List<Order> orders = new List<Order>();
-
-        // WHEN
-        Test.startTest();
-        OrderService.validateBeforeDelete(orders);
-        Test.stopTest();
-
-        // THEN
-        System.assertEquals(0, orders.size());
-    }
-
-    @isTest
-    static void validateBeforeUpdate_newMapNull_shouldFail() {
+     @isTest
+    static void test06_exceptionOldMap() {
 
         // GIVEN
         List<Account> accounts = TestDataFactory.createAccounts(1, 'Particulier', 'France');
@@ -237,53 +212,17 @@ public class OrderServiceTest {
     }
 
     @isTest
-    static void validateUpdate_noOrderItems_shouldSetZero() {
+    static void test07_exceptionNewMap() {
 
         // GIVEN
         List<Account> accounts = TestDataFactory.createAccounts(1, 'Particulier', 'France');
+        List<Order> orders = TestDataFactory.createOrders(1, 3, new List<Id>{ accounts[0].Id });
 
-        // ⚠️ créer une commande SANS items
-        Id pbId = Test.getStandardPricebookId();
-
-        Contract c = new Contract(
-            AccountId = accounts[0].Id,
-            Status = 'Activated',
-            StartDate = Date.today()
-        );
-        insert c;
-
-        Order o = new Order(
-            AccountId = accounts[0].Id,
-            ContractId = c.Id,
-            Status = 'Activated',
-            EffectiveDate = Date.today(),
-            Pricebook2Id = pbId
-        );
-        insert o;
-
-        Map<Id, Order> oldMap = new Map<Id, Order>{ o.Id => o };
-
-        Order newOrder = o.clone(false, true, true, true);
-        newOrder.Status = 'Activated';
-        newOrder.AccountId = o.AccountId;
-
-        Map<Id, Order> newMap = new Map<Id, Order>{ newOrder.Id => newOrder };
+        Map<Id, Order> newMap = new Map<Id, Order>{
+            orders[0].Id => orders[0]
+        };
 
         // WHEN
-        Test.startTest();
-        OrderService.validateBeforeUpdate(oldMap, newMap);
-        Test.stopTest();
-
-        // THEN
-        System.assertEquals(1, newOrder.getErrors().size(),
-            'Doit tomber dans le cas totalOrderProducts = 0');
-    }
-
-    @isTest
-    static void validateBeforeUpdate_oldMapNull_shouldFail() {
-
-        Map<Id, Order> newMap = new Map<Id, Order>();
-
         Test.startTest();
         try {
             OrderService.validateBeforeUpdate(null, newMap);
@@ -295,80 +234,66 @@ public class OrderServiceTest {
     }
 
     @isTest
-    static void validateBeforeUpdate_newMapNull2_shouldFail() {
+    static void test08_accountNull() {
+
+        // GIVEN
+        Account acc = TestDataFactory.createAccounts(1, 'Particulier', 'France')[0];
+        List<Order> orders = TestDataFactory.createOrders(1, 3, new List<Id>{ acc.Id });
 
         Map<Id, Order> oldMap = new Map<Id, Order>();
+        Map<Id, Order> newMap = new Map<Id, Order>();
 
-        Test.startTest();
-        try {
-            OrderService.validateBeforeUpdate(oldMap, null);
-            System.assert(false);
-        } catch (OrderServiceException e) {
-            System.assertEquals('New Order not specified.', e.getMessage());
+        for (Order o : orders) {
+
+            oldMap.put(o.Id, o);
+
+            Order newOrder = new Order(
+                Id = o.Id,
+                Status = 'Activated',
+                AccountId = null
+            );
+
+            newMap.put(o.Id, newOrder);
         }
+
+        // WHEN
+       Test.startTest();
+        OrderService.validateBeforeUpdate(oldMap, newMap);
         Test.stopTest();
+
+        System.assertEquals(0, newMap.get(orders[0].Id).getErrors().size());
     }
 
     @isTest
-    static void validateUpdate_noOrderItems_shouldFail() {
+    static void test08_delete_nullList_shouldDoNothing() {
 
-        List<Account> accounts = TestDataFactory.createAccounts(1, 'Particulier', 'France');
-
-        Id pbId = Test.getStandardPricebookId();
-
-        Contract c = new Contract(
-            AccountId = accounts[0].Id,
-            Status = 'Activated',
-            StartDate = Date.today()
-        );
-        insert c;
-
-        Order o = new Order(
-            AccountId = accounts[0].Id,
-            ContractId = c.Id,
-            Status = 'Activated',
-            EffectiveDate = Date.today(),
-            Pricebook2Id = pbId
-        );
-        insert o;
-
-        Map<Id, Order> oldMap = new Map<Id, Order>{ o.Id => o };
-        Map<Id, Order> newMap = new Map<Id, Order>{ o.Id => o };
-
+        // WHEN
         Test.startTest();
-        try {
-            OrderService.validateBeforeUpdate(oldMap, newMap);
-            System.assert(false);
-        } catch (Exception e) {
-            System.assert(true);
-        }
+        OrderService.validateBeforeDelete(null);
         Test.stopTest();
+
+        // THEN
+        System.assert(true); // juste couvrir
     }
 
     @isTest
-    static void professionnel_lessThan5_shouldFail() {
+    static void test08_delete() {
 
-        List<Account> accounts =
-            TestDataFactory.createAccounts(1, 'Professionnel', 'France');
+        // GIVEN
+        List<Order> orders = new List<Order>();
 
-        List<Order> orders =
-            TestDataFactory.createOrders(1, 3, new List<Id>{ accounts[0].Id });
-
-        Map<Id, Order> oldMap = new Map<Id, Order>{ orders[0].Id => orders[0] };
-        Map<Id, Order> newMap = new Map<Id, Order>{ orders[0].Id => orders[0] };
-
+        // WHEN
         Test.startTest();
-        try {
-            OrderService.validateBeforeUpdate(oldMap, newMap);
-            System.assert(false);
-        } catch (Exception e) {
-            System.assert(true);
-        }
+        OrderService.validateBeforeDelete(orders);
         Test.stopTest();
+
+        // THEN
+        System.assertEquals(0, orders.size());
     }
 
+
     @isTest
-    static void validateDelete_emptyList_shouldPass() {
+    static void test15_validateDelete() {
 
         Test.startTest();
         OrderService.validateBeforeDelete(new List<Order>());
@@ -378,7 +303,7 @@ public class OrderServiceTest {
     }
 
     @isTest
-    static void validateDelete_noDelivery_shouldPass() {
+    static void test16_validateDelete() {
 
         List<Account> accounts = TestDataFactory.createAccounts(1, 'Particulier', 'France');
         List<Order> orders = TestDataFactory.createOrders(1, 3, new List<Id>{ accounts[0].Id });
@@ -389,4 +314,32 @@ public class OrderServiceTest {
 
         System.assert(true);
     }
+
+   @isTest
+    static void test17_validateBeforeDelete() {
+
+        // GIVEN
+        List<Account> accounts = TestDataFactory.createAccounts(1, 'Particulier', 'France');
+
+        List<Order> orders = TestDataFactory.createOrders(1, 3, new List<Id>{ accounts[0].Id });
+        orders[0].Status = 'Activated';
+        update orders;
+
+        List<Tarification__c> tarifs = TestDataFactory.createTarifs();
+        List<Livraison__c> deliveryOrders = TestDataFactory.createDeliveryOrders(accounts, orders);
+
+
+        Test.startTest();
+        try {
+            delete orders; //  C’est ici que l’erreur doit remonter
+            System.assert(false, 'An error should have been thrown');
+        } catch (DmlException e) {
+            System.assert(
+                e.getMessage().contains('Impossible de supprimer une commande'),
+                'Expected error message not found'
+            );
+        }
+        Test.stopTest();
+    }
+
 }

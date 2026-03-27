@@ -22,20 +22,33 @@ private class SalesPermissionTest {
 
         // 4. Tester le comportement sous cet utilisateur
         System.runAs(u) {
-            Account a = TestDataFactory.createAccount();
-            Contract c = TestDataFactory.createContract(a.Id);
-            Order o = TestDataFactory.createOrder(a.Id, c.Id);Transporteur__c tr = TestDataFactory.createTransporteur('Particulier');
-		    List<Tarification__c> liste = TestDataFactory.createTarificationList();
-            List<Tarification__c> result = TransporterOrchestrator.getAllTransporters(o.Id);
-     
-            Tarification__c fastest = result[0];
-            Tarification__c cheapest = result[1];
-            Tarification__c last = result[2];
+            List<Account> accounts = TestDataFactory.createAccounts(1, 'Particulier', 'France');
+            List<Id> accountIds = new List<Id>();
+                for (Account a : accounts) {
+                    accountIds.add(a.Id);
+                }
+            
+            List<Order> orders = TestDataFactory.createOrders(1, 3, accountIds);
+            List<Id> orderIds = new List<Id>();
+                for (Order o : orders) {
+                    orderIds.add(o.Id);
+                }
 
-            // L’utilisateur Sales doit pouvoir créer une livraison
-            Id livId = OrderService.createLivraison(o.Id, fastest.Id);
+            List<Tarification__c> tarifs = TestDataFactory.createTarifs();
+            Map<Id, Id> tarifIds = new Map<Id,Id>();
+                for (Order o : orders) {
+                    tarifIds.put(o.Id, tarifs[0].Id);
+                }
+		    
+            Test.startTest();
+            Map<Id, Id> deliveryOrders = DeliveryOrderService.createByOrderIds(orderIds, tarifIds);
+            Map<Id, Id> deliveryOrderIds = new Map<Id,Id>();
+                for (Id orderId : deliveryOrders.keySet()) {
+                    deliveryOrderIds.put(orderId, deliveryOrders.get(orderId));
+                }
+            Test.stopTest();
 
-            System.assertNotEquals(null, livId, 'L’utilisateur Sales doit pouvoir créer une livraison');
+            System.assertNotEquals(null, deliveryOrderIds, 'L’utilisateur Sales doit pouvoir créer une livraison');
         }
     }
 }

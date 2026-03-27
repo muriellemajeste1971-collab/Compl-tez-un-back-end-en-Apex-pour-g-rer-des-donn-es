@@ -5,11 +5,13 @@ public class DeliveryOrderServiceTest {
     // 1. SINGLE ACTION
     // =========================================
     @isTest
-    static void singleAction() {
+    static void test01_singleAction() {
 
         // GIVEN
         List<Account> accounts = TestDataFactory.createAccounts(1, 'Particulier', 'France');
         List<Order> orders = TestDataFactory.createOrders(1, 3, new List<Id>{ accounts[0].Id });
+        orders[0].Status = 'Activated';
+        update orders;
 
         List<Tarification__c> tarifs = TestDataFactory.createTarifs();
 
@@ -34,29 +36,47 @@ public class DeliveryOrderServiceTest {
     // 2. BULK ACTIONS
     // =========================================
     @isTest
-    static void bulkActions() {
+    static void test02_bulkActions() {
 
         // GIVEN
         List<Account> accounts = TestDataFactory.createAccounts(1, 'Particulier', 'France');
 
         List<Id> accountIds = new List<Id>();
-        for (Account acc : accounts) {
-            accountIds.add(acc.Id);
-        }
+            for (Account acc : accounts) {
+                accountIds.add(acc.Id);
+            }
 
         List<Order> orders = TestDataFactory.createOrders(200, 3, accountIds);
+       
+
+        Map<Id, Order> oldMap = new Map<Id, Order>();
+            for (Order o : orders) {
+                oldMap.put(o.Id, o);
+            }
+
+        Map<Id, Order> newMap = new Map<Id, Order>();
+            for (Order o : orders) {
+                Order newOrder = new Order(
+                    Id = o.Id,
+                    Status = 'Activated',
+                    AccountId = null
+                );
+                newMap.put(o.Id, newOrder);
+            }
+            
+        update newMap.values();
+
         List<Tarification__c> tarifs = TestDataFactory.createTarifs();
 
         Map<Id, Id> selectedTarifIds = new Map<Id, Id>();
-
-        for (Order o : orders) {
-            selectedTarifIds.put(o.Id, tarifs[0].Id);
-        }
+            for (Order o : orders) {
+                selectedTarifIds.put(o.Id, tarifs[0].Id);
+            }
 
         List<Id> orderIds = new List<Id>();
-        for (Order o : orders) {
-            orderIds.add(o.Id);
-        }
+            for (Order o : orders) {
+                orderIds.add(o.Id);
+            }
 
         // WHEN
         Test.startTest();
@@ -72,23 +92,27 @@ public class DeliveryOrderServiceTest {
     // 3. POSITIVE BEHAVIOUR
     // =========================================
     @isTest
-    static void positiveBehaviour() {
+    static void test03_positiveBehaviour() {
 
         // GIVEN
         List<Account> accounts = TestDataFactory.createAccounts(2, 'Particulier', 'France');
-
         List<Id> accountIds = new List<Id>();
-        for (Account acc : accounts) {
-            accountIds.add(acc.Id);
-        }
+            for (Account acc : accounts) {
+                accountIds.add(acc.Id);
+            }
 
         List<Order> orders = TestDataFactory.createOrders(2, 3, accountIds);
+            for (Order o : orders) {
+                o.Status = 'Activated';
+            }
+        update orders;
+
         List<Tarification__c> tarifs = TestDataFactory.createTarifs();
 
         Map<Id, Id> selectedTarifIds = new Map<Id, Id>();
-        for (Order o : orders) {
-            selectedTarifIds.put(o.Id, tarifs[0].Id);
-        }
+            for (Order o : orders) {
+                selectedTarifIds.put(o.Id, tarifs[0].Id);
+            }
 
         // WHEN
         Test.startTest();
@@ -111,7 +135,7 @@ public class DeliveryOrderServiceTest {
     // 4. NEGATIVE BEHAVIOUR
     // =========================================
     @isTest
-    static void negativeBehaviour() {
+    static void test04_negativeBehaviour() {
 
         // GIVEN
         List<Id> orderIds = new List<Id>();
@@ -132,7 +156,7 @@ public class DeliveryOrderServiceTest {
     // 5. RESTRICTED USER
     // =========================================
     @isTest
-    static void restrictedUser() {
+    static void test05_restrictedUser() {
 
         // GIVEN
         List<User> users = TestDataFactory.createUsers(
@@ -141,7 +165,11 @@ public class DeliveryOrderServiceTest {
         User restrictedUser = users[0];
 
         List<Account> accounts = TestDataFactory.createAccounts(1, 'Particulier', 'France');
+
         List<Order> orders = TestDataFactory.createOrders(1, 3, new List<Id>{ accounts[0].Id });
+        orders[0].Status = 'Activated';
+        update orders;
+        
         List<Tarification__c> tarifs = TestDataFactory.createTarifs();
 
         Map<Id, Id> selectedTarifIds = new Map<Id, Id>{
@@ -168,11 +196,14 @@ public class DeliveryOrderServiceTest {
     // 6. UPDATE (COUVERTURE)
     // =========================================
     @isTest
-    static void updateByIds_shouldWork() {
+    static void test06_updateByIds_shouldWork() {
 
         // GIVEN
         List<Account> accounts = TestDataFactory.createAccounts(1, 'Particulier', 'France');
+
         List<Order> orders = TestDataFactory.createOrders(1, 3, new List<Id>{ accounts[0].Id });
+        orders[0].Status = 'Activated';
+        update orders;
 
         List<Tarification__c> tarifs = TestDataFactory.createTarifs();
 
@@ -208,11 +239,13 @@ public class DeliveryOrderServiceTest {
     }
 
     @isTest
-    static void updateByIds_missingTarif_shouldFail() {
+    static void test07_updateByIds_missingTarif_shouldFail() {
 
         // GIVEN
         List<Account> accounts = TestDataFactory.createAccounts(1, 'Particulier', 'France');
         List<Order> orders = TestDataFactory.createOrders(1, 3, new List<Id>{ accounts[0].Id });
+        orders[0].Status = 'Activated';
+        update orders;
 
         List<Tarification__c> tarifs = TestDataFactory.createTarifs();
 
@@ -249,11 +282,13 @@ public class DeliveryOrderServiceTest {
     }
 
     @isTest
-    static void negativeBehaviour_selectedTarifEmpty_shouldFail() {
+    static void test08_negativeBehaviour_selectedTarifEmpty_shouldFail() {
 
         // GIVEN
         List<Account> accounts = TestDataFactory.createAccounts(1, 'Particulier', 'France');
         List<Order> orders = TestDataFactory.createOrders(1, 3, new List<Id>{ accounts[0].Id });
+        orders[0].status = 'Activated';
+        update orders;
 
         List<Id> orderIds = new List<Id>{ orders[0].Id };
 
@@ -269,4 +304,6 @@ public class DeliveryOrderServiceTest {
         }
         Test.stopTest();
     }
+
+    
 }

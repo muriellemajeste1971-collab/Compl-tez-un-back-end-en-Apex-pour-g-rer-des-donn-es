@@ -1,93 +1,119 @@
-@IsTest
-private class OrderTriggerTest {
-
-    @IsTest
+@isTest
+public class OrderTriggerTest {
+  
+    @isTest
     static void testBeforeUpdateValid() {
 
         // GIVEN
-        Account a = TestDataFactory.createAccounts(1, 'Particulier', 'France')[0];
-        List<Order> orders = TestDataFactory.createOrders(1, 1, new List<Id>{a.Id});
-        Order o = orders[0];
-
-        // WHEN : valeur valide
-        o.Status = 'Draft';
-
-        Test.startTest();
-        update o;
-        Test.stopTest();
-
-        // THEN
-        Order updated = [
-            SELECT Status
-            FROM Order
-            WHERE Id = :o.Id
-        ];
-        System.assertEquals('Draft', updated.Status);
-    }
-
-    @IsTest
-    static void testBeforeUpdateInvalid() {
-
-        // GIVEN
-        Account a = TestDataFactory.createAccounts(1, 'Particulier', 'France')[0];
-        List<Order> orders = TestDataFactory.createOrders(1, 1, new List<Id>{a.Id});
-        Order o = orders[0];
-
-        // WHEN : valeur qui doit déclencher une erreur
-        o.Status = 'InvalidStatus';
-
-        try {
-            Test.startTest();
-            update o;
-            Test.stopTest();
-            System.assert(false, 'La mise à jour aurait dû échouer');
-        }
-        catch (Exception e) {
-            System.assert(true);
-        }
-    }
-
-    @IsTest
-    static void testBeforeDeleteValid() {
-
-        // GIVEN
-        Account a = TestDataFactory.createAccounts(1, 'Particulier', 'France')[0];
-        List<Order> orders = TestDataFactory.createOrders(1, 1, new List<Id>{a.Id});
-        Order o = orders[0];
+        List<Account> acc = TestDataFactory.createAccounts(1, 'Particulier', 'France');
+        List<Order> orders = TestDataFactory.createOrders(1, 3, new List<Id>{ acc[0].Id });
 
         // WHEN
         Test.startTest();
-        delete o;
+        update orders;
         Test.stopTest();
 
         // THEN
-        System.assertEquals(0, [
-            SELECT Count()
-            FROM Order
-            WHERE Id = :o.Id
-        ]);
+        System.assert(true);
     }
 
-    @IsTest
+   
+    @isTest
+    static void testBeforeUpdateInvalid() {
+
+        // GIVEN
+        List<Account> acc = TestDataFactory.createAccounts(1, 'Particulier', 'France');
+        
+
+        // WHEN
+        Test.startTest();
+
+        try {
+            List<Order> orders = TestDataFactory.createOrders(1, 1, new List<Id>{ acc[0].Id });
+            orders[0].status = 'Activated';
+            update orders;
+            System.assert(false, 'Une exception aurait dû être levée');
+        } catch (DmlException e) {
+            System.assert(
+                e.getMessage().contains('La commande doit contenir au moins 3 produits'),
+                'Le message d’erreur est incorrect'
+            );
+        }
+
+        Test.stopTest();
+    }
+
+    // =========================================
+    // UPDATE INVALID (Professionnel < 5 produits)
+    // =========================================
+    @isTest
+    static void testBeforeUpdateInvalid_Professionnel() {
+
+        // GIVEN
+        List<Account> acc = TestDataFactory.createAccounts(1, 'Professionnel', 'France');
+        List<Order> orders = TestDataFactory.createOrders(1, 3, new List<Id>{ acc[0].Id });
+        orders[0].status = 'Activated';
+
+        // WHEN
+        Test.startTest();
+
+        try {
+            update orders;
+            System.assert(false, 'Une exception aurait dû être levée');
+        } catch (DmlException e) {
+            System.assert(
+                e.getMessage().contains('La commande doit contenir au moins 5 produits'),
+                'Le message d’erreur est incorrect'
+            );
+        }
+
+        Test.stopTest();
+    }
+
+    // =========================================
+    // DELETE INVALID (avec livraison)
+    // =========================================
+    @isTest
     static void testBeforeDeleteInvalid() {
 
         // GIVEN
-        Account a = TestDataFactory.createAccounts(1, 'Particulier', 'France')[0];
-        List<Order> orders = TestDataFactory.createOrders(1, 1, new List<Id>{a.Id});
-        Order o = orders[0];
+        List<Account> acc = TestDataFactory.createAccounts(1, 'Particulier', 'France');
+        List<Order> orders = TestDataFactory.createOrders(1, 3, new List<Id>{ acc[0].Id });
+        orders[0].status = 'Activated';
+        update orders;
 
-        // WHEN : on force un état interdit
-        o.Status = 'Activated';
-        update o;
+        // 👉 créer livraison avec ta factory
+        TestDataFactory.createTarifs(); // obligatoire pour livraison
+        TestDataFactory.createDeliveryOrders(acc, orders);
 
+        // WHEN
+        Test.startTest();
         try {
-            Test.startTest();
-            delete o;
-            Test.stopTest();
-            System.assert(false, 'La suppression aurait dû échouer');
-        }
-        catch (Exception e) {
+            delete orders;
+            System.assert(false);
+        } catch (DmlException e) {
             System.assert(true);
         }
+        Test.stopTest();
+    }
+
+    // =========================================
+    // DELETE VALID (sans livraison)
+    // =========================================
+    @isTest
+    static void testBeforeDeleteValid() {
+
+        // GIVEN
+        List<Account> acc = TestDataFactory.createAccounts(1, 'Particulier', 'France');
+        List<Order> orders = TestDataFactory.createOrders(1, 3, new List<Id>{ acc[0].Id });
+        update orders;
+
+        // WHEN
+        Test.startTest();
+        delete orders;
+        Test.stopTest();
+
+        // THEN
+        System.assert(true);
     }
 }

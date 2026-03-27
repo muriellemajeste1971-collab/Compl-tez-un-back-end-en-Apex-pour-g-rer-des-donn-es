@@ -49,12 +49,6 @@ public class TestDataFactory {
         List<OrderItem> items = OrderItemFactory.assemble(orders, numberOfProducts, entries, products);
         insert items;
 
-        // 7. Activation des Orders
-            for (Order o : orders) {
-                o.Status = 'Activated';
-            }
-
-        update orders;
         return orders;
     }
    		

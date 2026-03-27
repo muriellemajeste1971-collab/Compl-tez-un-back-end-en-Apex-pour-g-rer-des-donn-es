@@ -13,8 +13,7 @@ public with sharing class OrderTarifService {
             throw new OrderTarifServiceException('Order Id not specified.');
         }
 
-        Map<Id, List<Tarification__c>> resultMap =
-            OrderTarifAggregator.getOrderTarifsByOrderIds(new Set<Id>{ orderId });
+        Map<Id, List<Tarification__c>> resultMap = OrderTarifAggregator.getOrderTarifsByOrderIds(new Set<Id>{ orderId });
 
         return resultMap.get(orderId);
     }

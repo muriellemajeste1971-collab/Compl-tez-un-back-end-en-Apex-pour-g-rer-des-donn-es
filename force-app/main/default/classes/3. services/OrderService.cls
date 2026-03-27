@@ -2,8 +2,6 @@ public with sharing class OrderService {
 
     public static void validateBeforeUpdate(Map<Id, Order> oldMap, Map<Id, Order> newMap) {
         
-            // Validate parameters
-
             if (oldMap == null || oldMap.isEmpty()) {
                 throw new OrderServiceException('Old Order not specified.');
             }
@@ -80,10 +78,6 @@ public with sharing class OrderService {
     }
 
     public static void validateDelete(List<Order> orders) {
-
-        if (orders == null || orders.isEmpty()) {
-            return;
-        }
 
         // 1. collecter les Ids des commandes qui ont déclenché le trigger
         List<Id> orderIds = new List<Id>();
