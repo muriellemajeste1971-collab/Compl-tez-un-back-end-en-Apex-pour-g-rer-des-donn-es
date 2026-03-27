@@ -3,7 +3,7 @@
 private class OrderTarifAggregatorTest {
 
     @isTest
-    static void test1_singleAction() {
+    static void test01_singleAction() {
 
         // GIVEN
         List<Account> accounts = TestDataFactory.createAccounts(1, 'Particulier', 'France');
@@ -24,10 +24,9 @@ private class OrderTarifAggregatorTest {
     }
 
     @isTest
-    static void test2_bulkActions() {
+    static void test02_bulkActions() {
         // GIVEN
-        List<Account> accounts =
-            TestDataFactory.createAccounts(1, 'Particulier', 'France');
+        List<Account> accounts = TestDataFactory.createAccounts(1, 'Particulier', 'France');
 
         List<Order> orders = TestDataFactory.createOrders(5, 3, new List<Id>{ accounts[0].Id });
 
@@ -53,7 +52,7 @@ private class OrderTarifAggregatorTest {
     }
 
     @isTest
-    static void test3_positiveBehaviour() {
+    static void test03_positiveBehaviour() {
 
         // GIVEN
         List<Account> accounts = TestDataFactory.createAccounts(1, 'Particulier', 'France');
@@ -79,7 +78,7 @@ private class OrderTarifAggregatorTest {
     }
 
     @isTest
-    static void test4_negativeBehaviour() {
+    static void test04_negativeBehaviour() {
 
         // GIVEN
         List<Account> accounts = TestDataFactory.createAccounts(1, 'Particulier', 'France');
@@ -100,7 +99,7 @@ private class OrderTarifAggregatorTest {
     }
 
     @isTest
-    static void test5_restrictedUser() {
+    static void test05_restrictedUser() {
 
         // GIVEN
         List<User> users = TestDataFactory.createUsers(
@@ -133,34 +132,34 @@ private class OrderTarifAggregatorTest {
     }
 
   @isTest
-static void tes6_france() {
+    static void tes6_france() {
 
-    // GIVEN
-    List<Account> accounts = TestDataFactory.createAccounts(1, 'Particulier', 'France');
+        // GIVEN
+        List<Account> accounts = TestDataFactory.createAccounts(1, 'Particulier', 'France');
 
-    List<Order> orders = TestDataFactory.createOrders(1, 3, new List<Id>{ accounts[0].Id });
+        List<Order> orders = TestDataFactory.createOrders(1, 3, new List<Id>{ accounts[0].Id });
 
-    // Correction essentielle : renseigner le pays de la commande
-    orders[0].ShippingCountry = 'FR';
-    update orders;
+        // Correction essentielle : renseigner le pays de la commande
+        orders[0].ShippingCountry = 'FR';
+        update orders;
 
-    TestDataFactory.createTarifs();
+        TestDataFactory.createTarifs();
 
-    // WHEN
-    Test.startTest();
-    Map<Id, List<Tarification__c>> result =
-        OrderTarifAggregator.getOrderTarifsByOrderIds(
-            new Set<Id>{ orders[0].Id }
-        );
-    Test.stopTest();
+        // WHEN
+        Test.startTest();
+        Map<Id, List<Tarification__c>> result =
+            OrderTarifAggregator.getOrderTarifsByOrderIds(
+                new Set<Id>{ orders[0].Id }
+            );
+        Test.stopTest();
 
-    List<Tarification__c> listResult = result.get(orders[0].Id);
+        List<Tarification__c> listResult = result.get(orders[0].Id);
 
-    // THEN
-    System.assertEquals(4, listResult.size());
-    System.assertEquals(1, listResult[0].D_lai_de_Livraison_jours__c);
-    System.assertEquals(14, listResult[1].Tarif_de_Livraison__c);
-}
+        // THEN
+        System.assertEquals(4, listResult.size());
+        System.assertEquals(1, listResult[0].D_lai_de_Livraison_jours__c);
+        System.assertEquals(14, listResult[1].Tarif_de_Livraison__c);
+    }
 
 
     @isTest
@@ -169,7 +168,8 @@ static void tes6_france() {
         List<Account> accounts = TestDataFactory.createAccounts(1, 'Particulier', 'Belgique');
 
         List<Order> orders = TestDataFactory.createOrders(1, 3, new List<Id>{ accounts[0].Id });
-        orders[0].Status = 'Activated';
+        // Correction essentielle : renseigner le pays de la commande
+        orders[0].ShippingCountry = 'BE';
         update orders;
 
         TestDataFactory.createTarifs();
@@ -185,28 +185,6 @@ static void tes6_france() {
 
         System.assertEquals(3, listResult.size());
     }
-
-    @isTest
-    static void test8_noTarif() {
-
-        List<Account> accounts = TestDataFactory.createAccounts(1, 'Particulier', 'Espagne');
-
-        List<Order> orders = TestDataFactory.createOrders(1, 3, new List<Id>{ accounts[0].Id });
-        orders[0].Status = 'Activated';
-        update orders;
-
-        TestDataFactory.createTarifs();
-
-        Test.startTest();
-        Map<Id, List<Tarification__c>> result =
-            OrderTarifAggregator.getOrderTarifsByOrderIds(
-                new Set<Id>{ orders[0].Id }
-            );
-        Test.stopTest();
-
-        System.assertEquals(0, result.get(orders[0].Id).size());
-    }
-    
 
 
 @isTest
@@ -233,12 +211,13 @@ static void test10_noTarif_shouldReturnEmpty() {
 
 
 @isTest
-static void test_full_fastest_and_cheapest() {
+static void test11_full_fastest_and_cheapest() {
 
     // GIVEN
     List<Account> accounts = TestDataFactory.createAccounts(1, 'Particulier', 'France');
     List<Order> orders = TestDataFactory.createOrders(1, 3, new List<Id>{ accounts[0].Id });
-    orders[0].Status = 'Activated';
+   
+    orders[0].ShippingCountry = 'FR';
     update orders;
    
 
@@ -283,6 +262,9 @@ static void test_full_fastest_and_cheapest() {
 
         // 2. Create 1 order for this account
         List<Order> orders = TestDataFactory.createOrders(1, 3, new List<Id>{ accounts[0].Id });
+        orders[0].ShippingCountry = 'FR';
+        update orders;
+
        
 
         // 3. Create tarifs (France + Belgique)
